@@ -1,0 +1,10 @@
+[Desktop Entry]
+# filename of this file should probably be all lowercase, but not sure.
+Name=Popout3D
+Exec=popout3d
+Comment=A 3D image creator
+Icon=/app/share/popout3d/popout3d_logo.png
+Type=Application
+Terminal=false
+StartupNotify=true
+Categories=Graphics;Photography;ImageProcessing
