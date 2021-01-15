@@ -844,7 +844,7 @@ class GUI:
 		self.scaleBal.set_value(defaultBal)
 
 	def __init__(self):
-		self.glade = '/home/chris/debian/popout3d/'+gladefile #self.glade = datafold+gladefile !!!
+		self.glade = datafold+gladefile
 
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file(self.glade)	   
