@@ -1,6 +1,6 @@
 project(
   'popout3d',
-  version: '1.5.1',
+  version: '0.5.1',
   meson_version: '>= 0.46.0'
 )
 
@@ -39,9 +39,9 @@ install_data(
   'popout3d_logo64x64.png', rename : 'popout3d_logo.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
-# datadir doesn't look right
-# install_data(
-#  'popout3d.xml', rename : 'org.flatpak.popout3d.metainfo.xml',
-#  install_dir: join_paths(datadir, '/app/share/metainfo')
-# )
+
+install_data(
+	'popout3d_metainfo.xml', rename : 'com.Github.PopoutApps.popout3d.metainfo.xml',
+	install_dir: join_paths(datadir, '/app/share/metainfo')
+)
 
