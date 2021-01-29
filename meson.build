@@ -31,10 +31,10 @@ install_data(
   'popout3d.desktop',
   install_dir: join_paths(datadir, 'applications')
 )
-install_data(
-  'popout3d_logo.png',
-  install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')
-)
+#install_data(
+#  'popout3d_logo.png',
+#  install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')
+#)
 install_data(
   'popout3d_logo64x64.png', rename : 'popout3d_logo.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
