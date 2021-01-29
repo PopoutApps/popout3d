@@ -20,7 +20,7 @@ configure_file(
 
 data_files = [
   'popout3d.glade',  
-  'popout3d_logo.png'
+  'popout3d.png'
 ]
 
 foreach file : data_files
@@ -32,11 +32,11 @@ install_data(
   install_dir: join_paths(datadir, 'applications')
 )
 #install_data(
-#  'popout3d_logo.png',
+#  'popout3d.png',
 #  install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')
 #)
 install_data(
-  'popout3d_logo64x64.png', rename : 'popout3d_logo.png',
+  'popout3d_logo64x64.png', rename : 'popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
 
