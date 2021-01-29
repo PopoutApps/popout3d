@@ -3,7 +3,7 @@
 Name=Popout3D
 Exec=popout3d
 Comment=A 3D image creator
-Icon=/app/share/popout3d/popout3d_logo.png
+Icon=/app/share/popout3d/popout3d.png
 Type=Application
 Terminal=false
 StartupNotify=true
