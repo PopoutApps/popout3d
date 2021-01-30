@@ -39,9 +39,8 @@ install_data(
   'popout3d64x64.png', rename : 'popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
-
 install_data(
-	'popout3d_metainfo.xml'
-	install_dir: join_paths(datadir, 'com.Github.PopoutApps.popout3d')
+	'popout3d_metainfo.xml',
+	install_dir: join_paths(datadir, 'app/share/metainfo/${FLATPAK_ID}.metainfo.xml')
 )
 
