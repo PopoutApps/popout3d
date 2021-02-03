@@ -41,6 +41,5 @@ install_data(
 )
 install_data(
 	'popout3d_metainfo.xml',
-	install_dir: join_paths('applications')
+  install_dir: datadir / 'metainfo')
 )
-
