@@ -40,6 +40,6 @@ install_data(
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
 install_data(
-	'popout3d_metainfo.xml', rename : 'com.github.PopoutApps.popout3d.metainfo.xml'
-  install_dir: datadir / 'metainfo')
+	'popout3d_metainfo.xml', rename : 'com.github.PopoutApps.popout3d.appdata.xml'
+  install_dir: join_paths(datadir, 'metainfo')  
 )
