@@ -1,10 +1,10 @@
 [Desktop Entry]
-# filename of this file should probably be all lowercase, but not sure.
 Name=Popout3D
-Exec=popout3d
+Exec=com.github.PopoutApps.popout3d
 Comment=A 3D image creator
-Icon=popout3d.png
+Icon=com.github.PopoutApps.popout3d.png
 Type=Application
 Terminal=false
 StartupNotify=true
 Categories=Graphics;Photography;ImageProcessing
+Name[en_GB]=com.github.PopoutApps.popout3d.desktop

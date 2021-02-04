@@ -1381,7 +1381,7 @@ See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pub
 Open Popout3D then use File&gt;Open to select photo-L.JPG. Click Start to begin processing, then wait a minute or two until the 3D image appears.
 
 You will need 3D glasses to see anaglyph images or practice to see side-by-side or crossover. 
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
 If this application is being run as a Flatpak, there is no image alignment process. Please ignore statements in the Help about this.</property>
     <child internal-child="vbox">
       <object class="GtkBox">
