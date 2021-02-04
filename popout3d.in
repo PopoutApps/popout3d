@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 # popout3d
 
-
 '''
 --------------------------------------------------------------------------------
 Popout3D Stereo Image Creation
@@ -97,7 +96,14 @@ else:
 print('home',homefold)
 
 # work folder														For processing files
-workfold = homefold + '.popout3d/work/'	
+workfold = homefold + '.popout3d/'
+if os.path.isdir(workfold):
+	shutil.rmtree(workfold, True)
+
+result = os.system('mkdir '+ workfold)
+if result != 0:
+	print('Cannot create work directory')
+	sys.exit(result)
 print('work',workfold)
 
 # config folder
@@ -128,16 +134,7 @@ def getpreferences():
 	# local x i
 
 	okpref = True
-
-	# create data folder
-	if os.path.isdir(workfold):
-		shutil.rmtree(workfold, True)
-
-	result = os.system('mkdir '+ workfold)
-	if result != 0:
-		print('Cannot create work directory',chr(7))
-		sys.exit(result)
-
+	#(create workfolder)
 	'''
 	# copy default preferences file to preference folder
 	if not os.path.isfile(configfold + preffile):
