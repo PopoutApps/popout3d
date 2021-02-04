@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.popoutapps.popout3d</id>
+  <id>com.github.popoutapps.popout3d</id>
   
   <name>Popout3D</name>
   <summary>Creates 3D images from photographs taken with an ordinary camera.</summary>
