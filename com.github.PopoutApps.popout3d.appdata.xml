@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <component type="desktop-application">
-  <id>com.github.popoutapps.popout3d</id>
-  
+  <id>com.github.PopoutApps.popout3d</id>
+  <metadata_license>FTL</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>  
   <name>Popout3D</name>
   <summary>Creates 3D images from photographs taken with an ordinary camera.</summary>
-  
-  <metadata_license>FTL</metadata_license>
-  <project_license>GPL-3.0-or-later</project_license>
   <content_rating type="oars-1.0" />
   <releases>
     <release date="2021-01-28" version="0.5.1" />
