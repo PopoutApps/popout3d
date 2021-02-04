@@ -28,7 +28,7 @@ foreach file : data_files
 endforeach
 
 install_data(
-  'popout3d.desktop',
+  'com.github.PopoutApps.popout3d.desktop',
   install_dir: join_paths(datadir, 'applications')
 )
 install_data(
@@ -40,6 +40,6 @@ install_data(
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
 install_data(
-	'popout3d_metainfo.xml',
+	'com.github.PopoutApps.popout3d.appdata.xml',
   install_dir: join_paths(datadir, 'metainfo')  
 )
