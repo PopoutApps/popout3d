@@ -28,18 +28,18 @@ foreach file : data_files
 endforeach
 
 install_data(
-  'popout3d.desktop', rename : 'com.github.PopoutApps.popout3d.desktop'
+  'popout3d.desktop', rename : 'com.github.PopoutApps.popout3d.desktop',
   install_dir: join_paths(datadir, 'applications')
 )
 install_data(
-  'popout3d.png', rename : 'com.github.PopoutApps.popout3d.png'
+  'popout3d.png', rename : 'com.github.PopoutApps.popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')
 )
 install_data(
-  'popout3d64x64.png', rename : 'com.github.PopoutApps.popout3d.png'
+  'popout3d64x64.png', rename : 'com.github.PopoutApps.popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
 install_data(
-	'popout3d_metainfo.xml', rename : 'com.github.PopoutApps.popout3d.appdata.xml'
+	'popout3d_metainfo.xml', rename : 'com.github.PopoutApps.popout3d.appdata.xml',
   install_dir: join_paths(datadir, 'metainfo')  
 )
