@@ -18,7 +18,7 @@
 
   </description>
   
-  <launchable type="desktop-id">popout3d.desktop</launchable>
+  <launchable type="desktop-id">com.github.PopoutApps.popout3d.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <image>https://github.com/PopoutApps/popout3d/blob/main/popout3d.png</image>
