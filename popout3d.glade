@@ -1337,11 +1337,13 @@ Slight brightness increase and slight balance to right.
     <property name="gravity">center</property>
     <property name="transient-for">window</property>
     <property name="program-name">Popout3D</property>
-    <property name="version">Version 1.5.1</property>
+    <property name="version">Version 0.5.1</property>
     <property name="website-label" translatable="yes">Create a 3D picture from photographs taken with an ordinary camera.</property>
     <property name="license" translatable="yes">This program comes with absolutely no warranty.
 See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public Licence, version 3 or later&lt;/a&gt; for details.</property>
-    <property name="authors">Chris Rogers</property>
+    <property name="authors">Chris Rogers
+
+Flatpak packaging by exalm, hfiguiere, barthalion, nedrichards.</property>
     <property name="logo">popout3d.png</property>
     <property name="wrap-license">True</property>
     <property name="license-type">gpl-3-0</property>
