@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Popout3D
-Exec=com.github.PopoutApps.popout3d
+Exec=popout3d
 Comment=A 3D image creator
 Icon=com.github.PopoutApps.popout3d.png
 Type=Application
