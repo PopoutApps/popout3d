@@ -21,6 +21,7 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 	in /usr/share/common-licenses/GPL-3. If not, 
 	see <http://www.gnu.org/licenses/>.
 '''
+
 #-------------------------------------------------------------------------------
 import sys, os, shutil, subprocess, shlex, colorsys, math
 from PIL import Image, ImageEnhance # latter for new system
@@ -56,16 +57,16 @@ myfile = '{none}'							# current file
 myext = '{none}'							# current extension
 #myfold set later
 formatcode = 'A'
-stylecode = 'L'
+stylecode = 'P' #152 'L'
 view = 'All'
 firstrun = True	   
 scope = 'Folder'
-join2d = '-'									# join2d identifies 2D files
-join3d = '='									# join3d identifies 3D files
+join2d = ''#152 '-'									# join2d identifies 2D files
+join3d = ''#152 '='									# join3d identifies 3D files
 okchar   = ['0','1','2','3','4','5','6','7','8','9','L','R']
 okext	= ['jpg','JPG','jpeg','JPEG','tif','TIF','tiff','TIFF','png','PNG']
 okformat = ['A','S','C']
-okstyle  = ['L','P']
+okstyle  = ['N','P'] #152 L P 
 defaultBright = preferenceBright = choiceBright = 0
 defaultBal    = preferenceBal    = choiceBal    = 0
 
@@ -79,21 +80,18 @@ $XDG_CONFIG_HOME defines the base directory relative to which user specific conf
 	Not done.
 '''
 if os.path.exists('/.flatpak-info'):
-	version = 'Popout3D V0.5.1'
+	version = 'Popout3D V0.5.2'
 	package = 'flatpak'
 else:
-	version = 'Popout3D V1.5.1'
+	version = 'Popout3D V1.5.2'
 	package = 'debian'
-	
-# package = '' # set this to run from prompt.	
-print(package)
+
 # home folder
 homefold = os.getenv('XDG_HOME')
 if homefold != None:
-	homefold = homefold +'/'
+	homefold = homefold + '/'
 else:
 	homefold = os.getenv('HOME') + '/'
-print('home',homefold)
 
 # work folder														For processing files
 workfold = homefold + '.popout3d/'
@@ -104,7 +102,6 @@ result = os.system('mkdir '+ workfold)
 if result != 0:
 	print('Cannot create work directory')
 	sys.exit(result)
-print('work',workfold)
 
 # config folder
 configfold = os.getenv('XDG_CONFIG_HOME')
@@ -113,7 +110,6 @@ if configfold != None:
 	configfold = configfold + '/'
 else:
 	configfold = os.getenv('HOME') + '/.config/popout3d/'
-print('config', configfold)
 
 # project folder												For Glade file
 if package == 'flatpak':
@@ -127,27 +123,23 @@ elif package == 'debian':
 		datafold = '/usr/share/popout3d/'
 else: # no package
 	datafold = ''
-print('data', datafold)
-#-------------------------------------------------------------------------------		  
-def getpreferences():
-	global version, myfold, myfile, myext, formatcode, stylecode, view, scope, firstrun, choiceBright, choiceBal, preferenceBright, preferenceBal
-	# local x i
 
-	okpref = True
-	#(create workfolder)
-	'''
-	# copy default preferences file to preference folder
-	if not os.path.isfile(configfold + preffile):
-		#shutil.copyfile(datafold + preffile, configfold + preffile)
-		okpref = False ; print('Cannot find default preferences file.')
-	'''
-	
+print('package',package,'\thome',homefold,'\twork',workfold,'\tconfig',configfold,'\tdata',datafold)
+
+#-------------------------------------------------------------------------------		  
+def getpreferences(): #152
+	global version, myfold, myfile, myext, formatcode, stylecode, view, scope, firstrun, choiceBright, choiceBal, preferenceBright, preferenceBal
+	# local okpref, okcol, x, i, 
+
 	# create preferences array
 	prefdata = []
 	for i in range(9):
 		prefdata.append('')
 
-	# load preferences file
+	# load preferences file, if file not found or is wrong version skip to end
+	# if any fields are bad, replace with default
+
+	okpref = True
 	try:
 		with open(configfold + preffile, 'r') as infile:
 			for i in range(0, 9):
@@ -155,75 +147,84 @@ def getpreferences():
 				prefdata[i] = prefdata[i][:-1] # remove linefeed
 	except:
 		okpref = False
-		#print('preferences file failed to load.',chr(7))
-		
-	if prefdata[0] == version:
 
+	if okpref:
+		if not prefdata[0] == version:
+			okpref = False
+	
+	if okpref:			
 		if os.path.exists(prefdata[1]):
 			myfold = prefdata[1]
 		else:
 			myfold = homefold
-
-		myfile = prefdata[2] ; myext = prefdata[3]
-
-		if myfile == '{none}':
-		  scope = 'Folder'
-		else:
-		  scope = 'Set'
+		  		  
+		myfile = prefdata[2] ; myext = prefdata[3]; scope = 'Set'
+		if not os.path.exists(myfile+myext):
+			myfile == '{none}'; myext == '{none}'; scope = 'Folder'
 
 		if prefdata[4] in ['A', 'S', 'C']: # Anaglyph/Side-by-Side/Crossover
 			formatcode = prefdata[4]
 		else:
-			okpref = False
+			formatcode = 'A'
 
-		if prefdata[5] in ['L','P']: # Level/Popout
+		if prefdata[5] in ['N','P']: # 152 Normal Level/Popout
 			stylecode = prefdata[5]
 		else:
-			okpref = False
+			stylecode = 'N'
 
 		if prefdata[6] in ['All', '2D', '3D', 'Triptych']:
 			view = prefdata[6]
 		else:
-			okpref = False
+			view = 'All'
 
 		# prefdata[7] NOT USED
 
+		okcol = True
 		x = [0, 0]	   
 		for i in range (0, 2):
 			try:
 				x[i] = int(prefdata[8].split(' ')[i])
 			except:
-				okpref = False
+				okcol = False
 
-		if okpref:	   
+		if okcol:	   
 			if x[0] >= -100 and x[0] <= 100:
 				preferenceBright = x[0]
 			else:	 
-				okpref = False
+				preferenceBright = 0
 			if x[1] >= -100 and x[1] <= 100:
 				preferenceBal = x[1]					
 			else:
-				okpref = False
+				preferenceBright = 0
+				
 		choiceBright = preferenceBright; choiceBal = preferenceBal	
-	#if okpref:
-	#	choiceBright = preferenceBright; choiceBal = preferenceBal	
 
-	else:
-		firstrun = True	#print('Error in preferences file', chr(7))
-		myfold = homefold
-		#preferenceBright = defaultBright; preferenceBal = defaultBal
-		choiceBright = defaultBright; choiceBal = defaultBal
-		with open(configfold + preffile, 'w') as fn:			
-			fn.write(version+'\n')
-			fn.write(myfold+'\n')
-			fn.write(myfile+'\n')
-			fn.write(myext+'\n')
-			fn.write(formatcode+'\n')
-			fn.write(stylecode+'\n')
-			fn.write(view+'\n')
-			fn.write('No\n')
-			fn.write(str(choiceBright)+' '+str(choiceBal)+'\n')
-		   
+	if not okpref: # defaults
+		#version
+		myfold = '{none}'
+		myfile = '{none}'
+		myext = '{none}'
+		formatcode = 'A'
+		stylecode = 'N'
+		view = 'All'
+		#No
+		preferenceBright = 0; preferenceBal = 0
+
+	# write pref file anyway in case mydir/myfile have been deleted or any other problem
+	with open(configfold + preffile, 'w') as fn:			
+		fn.write(version+'\n')
+		fn.write(myfold+'\n')
+		fn.write(myfile+'\n')
+		fn.write(myext+'\n')
+		fn.write(formatcode+'\n')
+		fn.write(stylecode+'\n')
+		fn.write(view+'\n')
+		fn.write('No\n')
+		fn.write(str(preferenceBright)+' '+str(preferenceBal)+'\n')
+
+	choiceBright = preferenceBright; choiceBal = preferenceBal
+	firstrun = False	
+	   
 #===============================================================================
 def showMessage(self, which, message):
 	if which == 'warn':
@@ -267,13 +268,15 @@ def showImage(self): #1
 			if view == 'Triptych':
 
 				width = int(width/2) ; height = int(height/2)
-
-				newfilenameL = imagelist[imageind][0][:-5]+join2d+imagelist[imageind][0][-4]+'.'+imagelist[imageind][1]
+				#NB
+				#152newfilenameL = imagelist[imageind][0][:-5]+join2d+imagelist[imageind][0][-4]+'.'+imagelist[imageind][1]
+				newfilenameL = imagelist[imageind][0][:-4]+imagelist[imageind][0][-4]+'.'+imagelist[imageind][1]
 				if os.path.isfile(myfold+newfilenameL):
 					pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL, width, height, True)
 					self.imageL.set_from_pixbuf(pixbuf) ; self.labelImageL.set_text(newfilenameL)
-	 
-				newfilenameR = imagelist[imageind][0][:-5]+join2d+imagelist[imageind][0][-3]+'.'+imagelist[imageind][1]
+				#152newfilenameR = imagelist[imageind][0][:-5]+join2d+imagelist[imageind][0][-3]+'.'+imagelist[imageind][1]
+				newfilenameR = imagelist[imageind][0][:-4]+imagelist[imageind][0][-3]+'.'+imagelist[imageind][1]
+
 				if os.path.isfile(myfold+newfilenameR):
 					pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR, width, height, True)
 					self.imageR.set_from_pixbuf(pixbuf) ; self.labelImageR.set_text(newfilenameR)
@@ -293,71 +296,49 @@ def makeImagelist(self):
 	self.image1.clear() ; self.labelImage1.set_text('') 
 	imagelist = []
 
-	if view == '2D': # add 2D files to list
-
+	if view in ['All', '2D']: # add 2D files to list #152 All
 		for newfile in os.listdir(myfold):		   
-			newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
-
-			if len(newfile) > 2:
-				if (newfile[-2] == join2d #? newfile[0:2] != '3D' and 
-				 and newfile[-1] in okchar and newext in okext):
+			newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]		
+			if len(newfile) > 1:
+				if newext in okext and newfile[-1] in okchar:
 					# only add files in set to imagelist
 					# if scope == 'Set' and newfile[2:len(myfile)+2] == myfile and newext == myext:
 					if scope == 'Set':
-						if len(newfile) >= len(myfile) and newext == myext:
-							if newfile[0:len(myfile)] == myfile:
+						if len(newfile) == len(myfile) +1:
+							if newfile[0:-1] == myfile and newext == myext:						
 								imagelist.append([newfile, newext])
 
 					# add all files in folder to imagelist
 					elif scope == 'Folder':
 						imagelist.append([newfile, newext])
-		self.labelViewingTitle.set_label('2D Images')
-				  
-	if view in ['3D', 'Triptych']:  # add 3D files to list
 
+	if view in ['All', '3D', 'Triptych']:  # add 3D files to list #152 All
 		for newfile in os.listdir(myfold):
 			newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
-
-			#if newfile[0:2] == '3D' and newext in okext: #?>>
-			if len(newfile) > 5:
-				if (newfile[-5] == join3d
+			if len(newfile) > 4:
+				if (newext in okext
 				and newfile[-4] in okchar and newfile[-3] in okchar 
-				and newfile[-2] in okformat and newfile[-1] in okstyle
-				and newext in okext):
-
+				and newfile[-2] in okformat and newfile[-1] in okstyle):
 					# only add files in set to imagelist
-					#if scope == 'Set' and newfile[2:len(myfile)+2] == myfile and newext == myext:
 					if scope == 'Set':
-						if len(newfile) >= len(myfile) and newext == myext:
-							if newfile[0:len(myfile)] == myfile:
+						if len(newfile) == len(myfile) +4:												 
+							if newfile[0:-4] == myfile and newext == myext:
 								imagelist.append([newfile, newext])
 
 					# add all files in folder to imagelist
 					elif scope == 'Folder':
 						imagelist.append([newfile, newext])
-		self.labelViewingTitle.set_label('3D Images')
 		
-	if view == 'All': # add all image files to list
-		for newfile in os.listdir(myfold):
-			newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
-
-			if newext in okext:
-				# only add files in set to imagelist
-				#if scope == 'Set' and newfile[2:len(myfile)+2] == myfile and newext == myext:
-				if scope == 'Set' and len(newfile) >= len(myfile) and newext == myext:
-				  if newfile[:len(myfile)] == myfile:
-					  imagelist.append([newfile, newext])
-
-				# add all files in folder to imagelist
-				elif scope == 'Folder':
-					imagelist.append([newfile, newext])
+	if view == 'All':
 		self.labelViewingTitle.set_label('All Images')
-		
+	elif view == '2D':
+		self.labelViewingTitle.set_label('2D Images')
+	else:
+		self.labelViewingTitle.set_label('3D Images')
+	
 	imagelist = sorted(imagelist) ; imageind = 0
 
 	viewtext = ''
-	#self.labelViewingTitle.set_label(view +' Images')
-	
 	for i in imagelist:
 		viewtext = viewtext+i[0]+'.'+i[1]+'\n'
 	
@@ -370,19 +351,23 @@ def processPair(self, newfile, leftn, rightn, newext):
 	global warnings
 	
 	# make filenames then call align_image_stack
-	fileleft  = newfile+join2d+leftn+'.'+newext
-	fileright = newfile+join2d+rightn+'.'+newext
-	fileout   = newfile+join3d+leftn+rightn+formatcode+stylecode+'.'+newext
-	
+	#152fileleft  = newfile+join2d+leftn+'.'+newext
+	fileleft  = newfile+leftn+'.'+newext
+	#152fileright = newfile+join2d+rightn+'.'+newext
+	fileright = newfile+rightn+'.'+newext
+
+	#153 fileout   = newfile+join3d+leftn+rightn+formatcode+stylecode+'.'+newext
+	fileout   = newfile+leftn+rightn+formatcode+stylecode+'.'+newext
+		
 	if package == 'flatpak': # no align-image-stack
 		result = 0
 	else:	
-		if stylecode == 'L': # Level
+		if stylecode == 'N': # Normal #152
 			command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -A -C "'+myfold+fileright+'" "'+myfold+fileleft+'"'
 
-		else: # Popout
-			command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -A -C "'+myfold+fileright+'" "'+myfold+fileleft+'"'
-		
+		else: # 152
+			command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+myfold+fileright+'" "'+myfold+fileleft+'"' 
+
 		args = shlex.split(command) 
 		
 		result = subprocess.run(args) # this is not spawned
@@ -399,8 +384,6 @@ def processPair(self, newfile, leftn, rightn, newext):
 			image_left = Image.open(workfold+fileout+'0001.tif')
 			image_right = Image.open(workfold+fileout+'0000.tif')
 	
-		# NOT NEEDED image_left.load() ; image_right.load()
-
 		# merge the files, put result in myfold
 		if formatcode == 'A': # Anaglyph		  
 
@@ -442,7 +425,7 @@ def processPair(self, newfile, leftn, rightn, newext):
 
 		# save new image, write .view file, remove process file and aligned images
 		#?image_new.save(myfold+'3D'+fileout)
-		image_new.save(myfold+fileout)
+		image_new.save(myfold+fileout, quality=95, subsampling='4:4:4')
 
 		# delete intermediate files 
 		if os.path.isfile(workfold+fileout+'0001.tif'):
@@ -462,21 +445,23 @@ def processPairlist(self):
 
 			# open images and get image type and size
 			try:
-				img = Image.open(myfold+i[0]+join2d+i[1]+'.'+i[3])
-				# NOT NEEDED img.load() 
+				#152img = Image.open(myfold+i[0]+join2d+i[1]+'.'+i[3])
+				img = Image.open(myfold+i[0]+i[1]+'.'+i[3])
 				imageLeftFormat = img.format ; imageLeftSize = img.size
 				okleft = True
 			except:
-				warnings = warnings +'Unable to load left image '+myfold+i[0]+join2d+i[1]+'.'+i[3]+'.\n'
+				#152warnings = warnings +'Unable to load left image '+myfold+i[0]+join2d+i[1]+'.'+i[3]+'.\n'
+				warnings = warnings +'Unable to load left image '+myfold+i[0]+i[1]+'.'+i[3]+'.\n'
 				okleft = False
 
 			try:
-				img = Image.open(myfold+i[0]+join2d+i[2]+'.'+i[3])
-				# NOT NEEDED img.load()
+				#152img = Image.open(myfold+i[0]+join2d+i[2]+'.'+i[3])
+				img = Image.open(myfold+i[0]+i[2]+'.'+i[3])
 				imageRightFormat = img.format ; imageRightSize = img.size
 				okright = True
 			except:
-				warnings = warnings +'Unable to load right image '+myfold+i[0]+join2d+i[2]+'.'+i[3]+'.\n'
+				#152warnings = warnings +'Unable to load right image '+myfold+i[0]+join2d+i[2]+'.'+i[3]+'.\n'
+				warnings = warnings +'Unable to load right image '+myfold+i[0]+i[2]+'.'+i[3]+'.\n'
 				okright = False
 			
 			if okleft and okright:
@@ -486,9 +471,11 @@ def processPairlist(self):
 					processPair(self,i[0],i[1],i[2],i[3]) 
 				else:
 					if imageLeftFormat != imageRightFormat:
-						warnings = warnings +i[0]+join2d+i[1]+'.'+i[3]+' and '+i[0]+join2d+i[2]+'.'+i[3]+' can not be used as they have different filetypes.\n'
+						#152warnings = warnings +i[0]+join2d+i[1]+'.'+i[3]+' and '+i[0]+join2d+i[2]+'.'+i[3]+' can not be used as they have different filetypes.\n'
+						warnings = warnings +i[0]+i[1]+'.'+i[3]+' and '+i[0]+i[2]+'.'+i[3]+' can not be used as they have different filetypes.\n'
 					if imageLeftSize != imageRightSize:
-						warnings = warnings +i[0]+join2d+i[1]+'.'+i[3]+' '+str(imageLeftSize)+' and '+i[0]+join2d+i[2]+'.'+i[3]+' '+str(imageRightSize)+' can not be used as their dimensions do not match.\n'
+						#152warnings = warnings +i[0]+join2d+i[1]+'.'+i[3]+' '+str(imageLeftSize)+' and '+i[0]+join2d+i[2]+'.'+i[3]+' '+str(imageRightSize)+' can not be used as their dimensions do not match.\n'
+						warnings = warnings +i[0]+i[1]+'.'+i[3]+' '+str(imageLeftSize)+' and '+i[0]+i[2]+'.'+i[3]+' '+str(imageRightSize)+' can not be used as their dimensions do not match.\n'
  
 #===============================================================================
 # scan through set of images to call processPair for each valid pair
@@ -501,13 +488,16 @@ def makePairlist(self, newfile, newext):
 
 	# check for one with a digit at end
 	for i in range (0, 10):
-		if os.path.isfile(myfold+newfile+join2d+str(i)+'.'+newext):
+		#152if os.path.isfile(myfold+newfile+join2d+str(i)+'.'+newext):
+		if os.path.isfile(myfold+newfile+str(i)+'.'+newext):
 			imagestodo = imagestodo + 1
+
 	if imagestodo > 1:
 		imagesok = True
 			
 	# check for pair with L at end and R at end
-	if os.path.isfile(myfold+newfile+join2d+'L'+'.'+newext) and os.path.isfile(myfold+newfile+join2d+'R'+'.'+newext):
+	#152if os.path.isfile(myfold+newfile+join2d+'L'+'.'+newext) and os.path.isfile(myfold+newfile+join2d+'R'+'.'+newext):
+	if os.path.isfile(myfold+newfile+'L'+'.'+newext) and os.path.isfile(myfold+newfile+'R'+'.'+newext):
 		imagesok = True
 		
 	# if there are at least two images in the set, call processPair to process, 
@@ -520,18 +510,34 @@ def makePairlist(self, newfile, newext):
 			while rightn < 10: # top number is 9
 
 				# if left and right images exist and there is no existing 3D one
+				'''152
 				if (os.path.isfile(myfold+newfile+join2d+str(leftn)+'.'+newext) and os.path.isfile(myfold+newfile+join2d+str(rightn)+'.'+newext)
 				  #?and not os.path.isfile(myfold+'3D'+newfile+join3d+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
-				  and not os.path.isfile(myfold+newfile+join3d+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
+				  #153 and not os.path.isfile(myfold+newfile+join3d+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
+ 				  and not os.path.isfile(myfold+newfile+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
+				'''
+				if (os.path.isfile(myfold+newfile+str(leftn)+'.'+newext) and os.path.isfile(myfold+newfile+str(rightn)+'.'+newext)
+				  #?and not os.path.isfile(myfold+'3D'+newfile+join3d+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
+				  #153 and not os.path.isfile(myfold+newfile+join3d+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
+ 				  and not os.path.isfile(myfold+newfile+str(leftn)+str(rightn)+formatcode+stylecode+'.'+newext)):
+
 					pairlist.append([newfile, str(leftn), str(rightn), newext])
  
 				rightn = rightn + 1
 			leftn = leftn + 1
 
 		# if L and R images exist and there is no existing 3D one
+		'''152
 		if (os.path.isfile(myfold+newfile+join2d+'L'+'.'+newext) and os.path.isfile(myfold+newfile+join2d+'R'+'.'+newext)
 		 #?and not os.path.isfile(myfold+'3D'+newfile+join3d+'LR'+formatcode+stylecode+'.'+newext)):
-		 and not os.path.isfile(myfold+newfile+join3d+'LR'+formatcode+stylecode+'.'+newext)):
+		 #153 and not os.path.isfile(myfold+newfile+join3d+'LR'+formatcode+stylecode+'.'+newext)):
+ 		 and not os.path.isfile(myfold+newfile+'LR'+formatcode+stylecode+'.'+newext)):
+		'''
+		   
+		if (os.path.isfile(myfold+newfile+'L'+'.'+newext) and os.path.isfile(myfold+newfile+'R'+'.'+newext)
+		 #?and not os.path.isfile(myfold+'3D'+newfile+join3d+'LR'+formatcode+stylecode+'.'+newext)):
+		 #153 and not os.path.isfile(myfold+newfile+join3d+'LR'+formatcode+stylecode+'.'+newext)):
+ 		 and not os.path.isfile(myfold+newfile+'LR'+formatcode+stylecode+'.'+newext)):
 		   pairlist.append([newfile, 'L', 'R', newext])
   
 #===============================================================================
@@ -550,25 +556,16 @@ class GUI:
 
 		scope = 'Folder' ; pairlist = []
 		self.buttonStart.set_label('Queue')
-
-		'''Original for Debian
-		filechooser = Gtk.filechooser(title='Select the Folder where the images are', action=Gtk.FileChooserAction.SELECT_FOLDER, parent=self.window)
-		filechooser.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Select",Gtk.ResponseType.OK)		
-		
-		filechooser.set_current_folder(myfold)
-		response = filechooser.run(); filechooser.hide()
-
-		if response == Gtk.ResponseType.OK:
-		'''
-				
+			
 		filechooser = Gtk.FileChooserNative.new(title='Select the Folder where the images are', parent = self.window, action=Gtk.FileChooserAction.SELECT_FOLDER)
 		filechooser.set_current_folder(myfold)
 		response = filechooser.run();
 		filechooser.hide()
 		if response == Gtk.ResponseType.ACCEPT:
-
+		
 			newfold = filechooser.get_filename()
 			newfold = newfold+'/'
+			'''152
 			# must stay inside /home/{user}
 			if len(newfold) >= len(homefold):
 				if newfold[:len(homefold)] == homefold: 
@@ -578,35 +575,23 @@ class GUI:
 					showMessage(self, 'warn', 'Folder not changed')
 			else:
 				showMessage(self, 'warn', 'Folder not changed')		
+			'''
+			
+			myfold = newfold; os.chdir(myfold) 
+			myfile = '{none}' ;  myext = '{none}' 
 
-		self.window.set_title(version + '		  Folder: ' + myfold)
-
-		# update imagelist
-		makeImagelist(self) ; showImage(self)
+			self.window.set_title(version + '		  Folder: ' + myfold)
 		
+			# update imagelist
+			makeImagelist(self) ; showImage(self)
+			print (imagelist)
 	def menuitemSet(self, menuitem):
 		global myfold, myfile, myext, scope, pairlist
 		#local okfold
 		
 		scope = 'Set' ; pairlist = []
 		self.buttonStart.set_label('Queue')
-		'''
-		filechooser = Gtk.filechooser(title="Select any file from a set of images", action=Gtk.FileChooserAction.OPEN, parent=self.window)
-		filechooser.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Select",Gtk.ResponseType.OK)
-				
-		fileFilter = Gtk.FileFilter()
-		fileFilter.add_pattern('*.jpg')  ; fileFilter.add_pattern('*.JPG')
-		fileFilter.add_pattern('*.jpeg') ; fileFilter.add_pattern('*.JPEG')
-		fileFilter.add_pattern('*.tif')  ; fileFilter.add_pattern('*.TIF')
-		fileFilter.add_pattern('*.tiff') ; fileFilter.add_pattern('*.TIFF')
-		fileFilter.add_pattern('*.png')  ; fileFilter.add_pattern('*.PNG')
-		fileFilter.set_name('Image files') ; filechooser.add_filter(fileFilter)
-   
-		filechooser.set_current_folder(myfold)
-		response = filechooser.run();	filechooser.hide()
-		
-		if response == Gtk.ResponseType.OK:
-		'''
+
 		filechooser = Gtk.FileChooserNative.new(title="Select any file from a set of images", parent = self.window, action=Gtk.FileChooserAction.OPEN)
 		
 		fileFilter = Gtk.FileFilter()
@@ -625,12 +610,18 @@ class GUI:
 		else: # answered No or closed window
 			newfile = '{none}'   
 		
-		if len(newfile) >= len(homefold): #newfile contains directory too
-			if newfile[0:len(homefold)] == homefold:
-				newfold, newfile = os.path.split(newfile)
-				newfile, newext = os.path.splitext(newfile)				
+		'''152
+		# restrict to home directory
+		if 1 ==1: #len(newfile) >= len(homefold): #newfile contains directory too
+			if 1 == 1: #if newfile[0:len(homefold)] == homefold:
+		'''	
+		newfold, newfile = os.path.split(newfile)
+		newfile, newext = os.path.splitext(newfile)				
 
-				okfile = True
+		okfile = True
+		'''
+				152
+				#2 check for special character for 2D images
 				if join2d in newfile:
 					if len(newfile) > 2:
 						if (newfile[-2] == join2d and newfile[-1] in okchar):
@@ -639,9 +630,11 @@ class GUI:
 							okfile = False
 					else:
 						okfile = False						 
+
+			#3 check for special character for3D images
 				elif join3d in newfile:
 					if len(newfile) > 5:
-						if (newfile[-5] == join3d and newfile[-4] in okchar and newfile[-3] in okchar and newfile[-2] in okformat and newfile[-1] in okstyle):
+						if (newfile[-5] == join3d and newfile[-4] in okchar and newfile[-3] in okchar and newfile[-2] in okformat and newfile[-1] in okstyle): #<<<<
 							myfold = newfold +'/' ; myfile = newfile[:-5]; myext = newext[1:] 
 						else:
 							okfile = False
@@ -649,32 +642,51 @@ class GUI:
 						okfile = False						 
 				else:
 					okfile = False
-
-				if okfile == True:
-					os.chdir(newfold)
-					self.window.set_title(version + '		  Set: ' + myfile + '*.' + myext)
-					makeImagelist(self) ; showImage(self)
+		'''
+				
+		if len(newfile) > 1:
+			if newfile[-1] in okchar:
+				myfold = newfold +'/' ; myfile = newfile[:-1]; myext = newext[1:]
+			elif len(newfile) > 4:
+				if (newfile[-4] in okchar and newfile[-3] in okchar and newfile[-2] in okformat and newfile[-1] in okstyle):
+					myfold = newfold +'/' ; myfile = newfile[:-4]; myext = newext[1:] 
 				else:
-					showMessage(self, 'warn', 'Filename must contain a "'+join2d+'" or a "'+join3d+'" and follow other rules, see Help on File Selection.')
+					okfile = False
+			else:
+				okfile = False						 
+								
+		if okfile == True:
+			os.chdir(newfold)
+			self.window.set_title(version + '		  Set: ' + myfile + '*.' + myext)
+			makeImagelist(self) ; showImage(self)
+		else:
+			#153showMessage(self, 'warn', 'Filenames of 2D images must have a digit, an "L", or an "R" at the end, 3D filenames must follow the rules in Help on File Selection.')
+			showMessage(self, 'warn', 'Filename must follow rules in Help on File Selection.')
+
+		'''
 			else: 
 				showMessage(self, 'warn', 'Filename not changed.')					  
 		else: 
 			showMessage(self, 'warn', 'Filename not changed.')					  
+		'''
 			
 	def menuitemPreferences(self, menuitem):
 		result = showMessage(self, 'ask', 'This will save your current settings as the defaults.')
 		if result == 'Yes':
 			with open(configfold + preffile, 'w') as fn:			
-				fn.write(version+'\n')
-				fn.write(myfold+'\n')
-				fn.write(myfile+'\n')
-				fn.write(myext+'\n')
-				fn.write(formatcode+'\n')
-				fn.write(stylecode+'\n')
-				fn.write(view+'\n')
-				fn.write('No\n')
-				fn.write(str(choiceBright)+' '+str(choiceBal)+'\n')
-				
+				try: #152
+					fn.write(version+'\n')
+					fn.write(myfold+'\n')
+					fn.write(myfile+'\n')
+					fn.write(myext+'\n')
+					fn.write(formatcode+'\n')
+					fn.write(stylecode+'\n')
+					fn.write(view+'\n')
+					fn.write('No\n')
+					fn.write(str(choiceBright)+' '+str(choiceBal)+'\n')
+				except:
+					print('Failed to write preference file.')
+							
 	def messagedialogColours(self, menuitem):
 		self.messagedialogColours.run()
 		self.messagedialogColours.hide()	 
@@ -742,11 +754,11 @@ class GUI:
 			pairlist = []
 			makeImagelist(self) ; showImage(self)		   
 
-	def radiobuttontoggledLevel(self, radiobutton):
+	def radiobuttontoggledNormal(self, radiobutton):
 		global stylecode, pairlist
 		if radiobutton.get_active():
 			self.buttonStart.set_label('Queue')
-			stylecode = 'L' 
+			stylecode = 'N' #152'L'
 			pairlist = []
 			makeImagelist(self) ; showImage(self)
 		
@@ -773,11 +785,18 @@ class GUI:
 			if scope == 'Folder': # store one filename for each set in setlist
 				for newfile in os.listdir(myfold):
 					newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
+					'''152
 					if len(newfile) > 2:
 						if (newext in okext
 						 and newfile[-2] == join2d and newfile[-1] in okchar 
 						 and [newfile[:-2], newext] not in setlist):
 							setlist.append([newfile[:-2], newext]) #?
+					'''
+					if len(newfile) > 1: #~~~
+						if (newext in okext
+						 and newfile[-1] in okchar 
+						 and [newfile[:-1], newext] not in setlist):
+							setlist.append([newfile[:-1], newext]) #?
 
 			else: #scope ='Set' store one filename for the set in setlist
 				if myfile != '{none}' and myext != '{none}':
@@ -791,7 +810,8 @@ class GUI:
 				setlist = []
 						
 				for i in pairlist:					
-					viewtext = viewtext+i[0]+join3d+i[1]+i[2]+formatcode+stylecode+'.'+i[3]+'\n'					
+					#153 viewtext = viewtext+i[0]+join3d+i[1]+i[2]+formatcode+stylecode+'.'+i[3]+'\n'					
+					viewtext = viewtext+i[0]+i[1]+i[2]+formatcode+stylecode+'.'+i[3]+'\n'					
 					 
 				if pairlist != []:
 					#self.buttonStart.set_label('	 Process\n(Locks Screen)') # self.labelStart.set_label('(Screen Will Lock)') 
@@ -835,11 +855,17 @@ class GUI:
 							   
 		if len(imagelist) > 0:
 			#?if imagelist[imageind][0][0:2] == '3D':
+			'''152
 			if len(imagelist[imageind][0]) > 5:
-				if (imagelist[imageind][0][-5] == join3d and imagelist[imageind][0][-4] in okchar
+				if (imagelist[imageind][0][-5] == join3d and imagelist[imageind][0][-4] in okchar #<<<<<
 				 and imagelist[imageind][0][-3] in okchar and imagelist[imageind][0][-2] in okformat
-				 and imagelist[imageind][0][-1] in okstyle):		  
-			
+				 and imagelist[imageind][0][-1] in okstyle):
+			'''				 
+			if len(imagelist[imageind][0]) > 4:
+				if (imagelist[imageind][0][-4] in okchar
+				 and imagelist[imageind][0][-3] in okchar and imagelist[imageind][0][-2] in okformat
+				 and imagelist[imageind][0][-1] in okstyle):	
+				 			
 					if os.path.isfile(myfold+imagelist[imageind][0]+'.'+imagelist[imageind][1]):
 						result = showMessage(self, 'ask', 'Delete ' + imagelist[imageind][0]+'.'+imagelist[imageind][1] + '?')
 						if result == 'Yes':
@@ -925,7 +951,7 @@ class GUI:
 		self.radiobuttontoggledSidebyside = self.builder.get_object('radiobuttontoggledSidebyside')
 		self.radiobuttontoggledCrossover = self.builder.get_object('radiobuttontoggledCrossover')
 
-		self.radiobuttontoggledLevel = self.builder.get_object('radiobuttontoggledLevel')		
+		self.radiobuttontoggledNormal = self.builder.get_object('radiobuttontoggledNormal')		
 		self.radiobuttontoggledPopout = self.builder.get_object('radiobuttontoggledPopout')
 		self.radiobuttonLP = self.builder.get_object('radiobuttonLP')
 
@@ -939,7 +965,7 @@ class GUI:
 		self.radiobuttonSidebyside = self.builder.get_object('radiobuttonSidebyside')
 		self.radiobuttonCrossover = self.builder.get_object('radiobuttonCrossover')
 
-		self.radiobuttonLevel = self.builder.get_object('radiobuttonLevel')		
+		self.radiobuttonNormal = self.builder.get_object('radiobuttonNormal')		
 		self.radiobuttonPopout = self.builder.get_object('radiobuttonPopout')
 		
 		# to update scale
@@ -961,7 +987,7 @@ class GUI:
 		self.scaleBal.set_value(choiceBal)	 
 
 		# start in myfold folder
-		os.chdir(myfold)	
+		#os.chdir(myfold)	
 
 		global okshow ; okshow = False
 
@@ -979,8 +1005,8 @@ class GUI:
 
 		if stylecode == 'P': # Popout
 			self.radiobuttonPopout.set_active(True)
-		else: # Level
-			self.radiobuttonLevel.set_active(True)
+		else: # Normal
+			self.radiobuttonNormal.set_active(True)
 		
 		if view == '2D':
 			self.radiobutton2D.set_active(True)
@@ -995,6 +1021,8 @@ class GUI:
 		
 		if firstrun:
 			self.result = self.messageFirst.run() ; self.messageFirst.hide()
+
+		'''152	
 			with open(configfold + preffile, 'w') as fn:
 				fn.write(version+'\n')
 				fn.write(myfold+'\n')
@@ -1005,7 +1033,7 @@ class GUI:
 				fn.write(view+'\n')
 				fn.write('No\n') 
 				fn.write(str(choiceBright)+' '+str(choiceBal)+'\n')
-
+		'''
 if __name__ == '__main__':  
 	main = GUI()	
 	Gtk.main()
