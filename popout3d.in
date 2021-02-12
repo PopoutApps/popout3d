@@ -124,7 +124,7 @@ elif package == 'debian':
 else: # no package
 	datafold = ''
 
-print('package',package,'\thome',homefold,'\twork',workfold,'\tconfig',configfold,'\tdata',datafold)
+#print('package',package,'\thome',homefold,'\twork',workfold,'\tconfig',configfold,'\tdata',datafold)
 
 #-------------------------------------------------------------------------------		  
 def getpreferences(): #152
@@ -584,7 +584,7 @@ class GUI:
 		
 			# update imagelist
 			makeImagelist(self) ; showImage(self)
-			print (imagelist)
+
 	def menuitemSet(self, menuitem):
 		global myfold, myfile, myext, scope, pairlist
 		#local okfold
