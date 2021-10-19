@@ -25,7 +25,7 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 #-------------------------------------------------------------------------------
 import sys, os, shutil, subprocess, shlex, colorsys, math
 from PIL import Image, ImageEnhance # latter for new system
-# depends on hugin_tools for align_image_stack (not for Flatpak)
+# depends on hugin_tools for align_image_stack.
 
 try:
 	import gi
@@ -42,7 +42,7 @@ from gi.repository import Gtk, GdkPixbuf, Gdk #Gdk for colour button RGB
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-GBratio = 1 									#13/12 for my use
+#GBratio = 1 									#13/12 for my use
 formatcode = ''								# first letter of format
 stylecode = ''								# first letter of style
 scope = ''								  	# whether processing Folder or Set
@@ -79,12 +79,7 @@ $XDG_CONFIG_HOME defines the base directory relative to which user specific conf
 	If $XDG_CONFIG_HOME is either not set or empty, a default equal to $HOME/.config should be used.
 	Not done.
 '''
-if os.path.exists('/.flatpak-info'):
-	version = 'Popout3D V0.5.2'
-	package = 'flatpak'
-else:
-	version = 'Popout3D V1.5.2'
-	package = 'debian'
+version = 'Popout3D V1.5.2'
 
 # home folder
 homefold = os.getenv('XDG_HOME')
@@ -111,8 +106,8 @@ if configfold != None:
 else:
 	configfold = os.getenv('HOME') + '/.config/popout3d/'
 
-# project folder												For Glade file
-if package == 'flatpak':
+# project folder	
+if os.path.exists('/.flatpak-info'): #For Glade file
 	datafold = '/app/share/popout3d/'
 elif package == 'debian':
 	datafold = os.getenv('XDG_DATA_HOME')
@@ -359,30 +354,23 @@ def processPair(self, newfile, leftn, rightn, newext):
 	#153 fileout   = newfile+join3d+leftn+rightn+formatcode+stylecode+'.'+newext
 	fileout   = newfile+leftn+rightn+formatcode+stylecode+'.'+newext
 		
-	if package == 'flatpak': # no align-image-stack
-		result = 0
-	else:	
-		if stylecode == 'N': # Normal #152
-			command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -A -C "'+myfold+fileright+'" "'+myfold+fileleft+'"'
+	if stylecode == 'N': # Normal #152
+		command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -A -C "'+myfold+fileright+'" "'+myfold+fileleft+'"'
 
-		else: # 152
-			command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+myfold+fileright+'" "'+myfold+fileleft+'"' 
+	else:                # Popout #152
+		command   = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+myfold+fileright+'" "'+myfold+fileleft+'"' 
 
-		args = shlex.split(command) 
+	args = shlex.split(command) 
 		
-		result = subprocess.run(args) # this is not spawned
-		result = str(result)[str(result).find("returncode")+11] # Output of command is CompletedProcess(args='?', returncode=0)
-		result = int(result)
+	result = subprocess.run(args) # this is not spawned
+	result = str(result)[str(result).find("returncode")+11] # Output of command is CompletedProcess(args='?', returncode=0)
+	result = int(result)
 
 	if result == 0: # align_image_stack has worked (or not used)
 		# load left and right images
 
-		if package == 'flatpak': # no align-image-stack so load originals
-			image_left = Image.open(myfold+fileleft)
-			image_right = Image.open(myfold+fileright)
-		else: # load output of align-image-stack
-			image_left = Image.open(workfold+fileout+'0001.tif')
-			image_right = Image.open(workfold+fileout+'0000.tif')
+		image_left = Image.open(workfold+fileout+'0001.tif')
+		image_right = Image.open(workfold+fileout+'0000.tif')
 	
 		# merge the files, put result in myfold
 		if formatcode == 'A': # Anaglyph		  
@@ -391,17 +379,13 @@ def processPair(self, newfile, leftn, rightn, newext):
 			adjL = (choiceBright+100)/100	   *	   (100-choiceBal)/100
 			adjR = (choiceBright+100)/100	   *	   (choiceBal+100)/100
 
-			# separate the colour bands then apply colours
-			if package == 'flatpak': # no align-image-stack so load originals
-				Lred, Lgreen, Lblue = image_left.split()
-				Rred, Rgreen, Rblue = image_right.split()		   
-			else:
-				Lred, Lgreen, Lblue, Ljunk= image_left.split()
-				Rred, Rgreen, Rblue, Rjunk = image_right.split()		   				
+			# separate the colour bands then apply colours  
+			Lred, Lgreen, Lblue, Ljunk= image_left.split()
+			Rred, Rgreen, Rblue, Rjunk = image_right.split()		   				
 
 			Lred	= Lred.point  (lambda i: i * adjL)
-			Rgreen  = Rgreen.point(lambda i: i * adjR * GBratio)
-			Rblue   = Rblue.point (lambda i: i * adjR / GBratio)
+			Rgreen  = Rgreen.point(lambda i: i * adjR) #* GBratio)
+			Rblue   = Rblue.point (lambda i: i * adjR) #/ GBratio)
 
 			image_new = Image.merge('RGB', (Lred, Rgreen, Rblue))
 

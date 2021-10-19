@@ -48,7 +48,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
     <property name="gravity">center</property>
     <property name="message-type">other</property>
     <property name="buttons">close</property>
-    <property name="text" translatable="yes">Anaglyph Colours</property>
+    <property name="text" translatable="yes">Anaglyph Image</property>
     <child internal-child="vbox">
       <object class="GtkBox">
         <property name="can-focus">False</property>
@@ -99,12 +99,12 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                     <property name="column-homogeneous">True</property>
                     <child>
                       <object class="GtkButton" id="buttonBrightRevert">
-                        <property name="label">Preference</property>
+                        <property name="label">Revert</property>
                         <property name="width-request">125</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to saved preference.</property>
+                        <property name="tooltip-text" translatable="yes">Revert to value saved in preferences.</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="image-position">right</property>
@@ -123,7 +123,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to default value.</property>
+                        <property name="tooltip-text" translatable="yes">Revert to default value of red.</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="image-position">right</property>
@@ -177,12 +177,12 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                     </child>
                     <child>
                       <object class="GtkButton" id="buttonBalRevert">
-                        <property name="label">Preference</property>
+                        <property name="label">Revert</property>
                         <property name="width-request">125</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to saved preference.</property>
+                        <property name="tooltip-text" translatable="yes">Revert to value saved in preferences.</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="image-position">right</property>
@@ -201,7 +201,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to default value.</property>
+                        <property name="tooltip-text" translatable="yes">Revert to default value of red.</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="margin-bottom">6</property>
@@ -333,7 +333,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                       <object class="GtkMenuItem" id="(preferences)">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Save Preferences</property>
+                        <property name="label" translatable="yes">Preferences</property>
                         <signal name="activate" handler="menuitemPreferences" swapped="no"/>
                       </object>
                     </child>
@@ -341,7 +341,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                       <object class="GtkMenuItem" id="(colours)">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Anaglyph Colours</property>
+                        <property name="label" translatable="yes">Anaglyph colours</property>
                         <signal name="activate" handler="messagedialogColours" swapped="no"/>
                       </object>
                     </child>
@@ -881,14 +881,14 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                                     <property name="orientation">vertical</property>
                                     <property name="layout-style">start</property>
                                     <child>
-                                      <object class="GtkRadioButton" id="radiobuttonNormal">
-                                        <property name="label" translatable="yes">Normal</property>
+                                      <object class="GtkRadioButton" id="radiobuttonLevel">
+                                        <property name="label" translatable="yes">Level</property>
                                         <property name="visible">True</property>
                                         <property name="can-focus">True</property>
                                         <property name="receives-default">False</property>
                                         <property name="active">True</property>
                                         <property name="draw-indicator">True</property>
-                                        <signal name="toggled" handler="radiobuttontoggledNormal" swapped="no"/>
+                                        <signal name="toggled" handler="radiobuttontoggledLevel" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -903,7 +903,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                                         <property name="can-focus">True</property>
                                         <property name="receives-default">False</property>
                                         <property name="draw-indicator">True</property>
-                                        <property name="group">radiobuttonNormal</property>
+                                        <property name="group">radiobuttonLevel</property>
                                         <signal name="toggled" handler="radiobuttontoggledPopout" swapped="no"/>
                                       </object>
                                       <packing>
@@ -1073,11 +1073,11 @@ Each set of images (all those for the same subject) must be in the same format -
 
 The program won't read image files from a USB memory stick, camera or phone, so copy them onto your PC.
 
-When you have loaded them onto your PC, make sure that all images in the same set have the same filename ending in a digit that increases for the images which were taken from left to right, for example:
-DSCN0362.JPG
-DSCN0363.JPG
-DSCN0365.JPG
-Alternatively if you only have two, they may end in 'L' and 'R'.
+When you have loaded them onto your PC, make sure that all images in the same set have the same filename ending in a hyphen '-' then a digit that increases for the images which were taken from left to right, for example:
+DSCN036-2.JPG
+DSCN036-3.JPG
+DSCN036-5.JPG
+Alternatively if you only have two, they may end in '-L' and '-R'.
 
 Subjects                                                                
     Movement
@@ -1121,18 +1121,18 @@ Anaglyph
 A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
 
 Side-by-side
-A side-by-side 3D image viewed straight ahead. Left hand image on the left, right hand on the right. Some people can see these without a viewer, some can't.
+A side-by-side 3D image viewed straight ahead. Lefthand image on the left, righthand on the right. Some people can see these without a viewer, some can't.
 
 Crossover
-A side-by-side 3D image viewed with eyes crossed. Right hand image on the left, left hand on the right. Some people can see these without a viewer, some can't.
+A side-by-side 3D image viewed with eyes crossed. Righthand image on the left, lefthand on the right. Some people can see these without a viewer, some can't.
 
 There are two styles available:
 
-Normal
+Level
 A normal 3D image with the front of the picture level with the screen.
 
-Popout
-In some cases the effect is startling as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".</property>
+Popup
+The front of the 3D image will popout in front of the screen. In some cases the effect is startling, in most there is not much difference from "Level".</property>
                 <property name="wrap">True</property>
               </object>
               <packing>
@@ -1162,9 +1162,9 @@ In some cases the effect is startling as the front of the 3D image will popout i
                 <property name="label" translatable="yes">Set
 To process a single set of images - all for the same subject, first use File&gt;Set to choose any file from the set.
 
-scenery1.jpg 
-scenery2.jpg 
-scenery3.jpg 
+scenery-1.jpg 
+scenery-2.jpg 
+scenery-3.jpg 
 
 Selecting any of the scenery files will prepare you to process all of them. The program will create a 3D image for each pair of originals, so you are able to choose the best combination of images for left and right. It is not recommended to use more than 3 originals as the number of output images goes up dramatically: 
 
@@ -1173,12 +1173,11 @@ Selecting any of the scenery files will prepare you to process all of them. The 
 4 originals produce 6 3D images
 5 originals produce 10 3D images
 
-All the 3D images get the same filename (except the final character) and extension as the originals, plus two digits and a letter each for the format and style. These examples are 'Anaglyph' format with 'Normal' style:
+All the 3D images get the same filename (except the '-' and the final character) and extension as the originals, plus '=' then two digits and a letter each for the format and style. These examples are 'Anaglyph' format with 'Level' style:
 
-scenery12AN.jpg was made with scenery1.jpg for the left image and scenery2.jpg for the right. 
-scenery13AN.jpg was made with scenery1.jpg for the left image and scenery3.jpg for the right. 
-
-sceneryLRAN.jpg was made with sceneryL.jpg as the left image and sceneryR.jpg for the right. 
+scenery=12AL.jpg was made with scenery-1.jpg for the left image and scenery-2.jpg for the right. 
+scenery=13AL.jpg was made with scenery-1.jpg for the left image and scenery-3.jpg for the right. 
+scenery=LRAL.jpg was made with scenery-L.jpg as the left image and scenery-R.jpg for the right. 
 
 Folder: 
 To process all the image sets in a directory, first use File&gt;Directory to choose the directory with the image sets in.</property>
@@ -1210,11 +1209,14 @@ To process all the image sets in a directory, first use File&gt;Directory to cho
                 <property name="valign">start</property>
                 <property name="label" translatable="yes">To start processing the selected images, click on "Queue", this will show a list of the images to be created in the panel to the left. The text on the button will change to "Process". Press it and wait while a 3D image is created from each pair of aligned images. Popout3D  will be locked during the processing.
 
-For the 3D effect to work it is essential that each pair of images is prefectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. This step may take about 20 seconds per 3D image. If you switch windows while you are waiting you are likely to get a popup warning “Popout3D...is not responding.", just press "Wait". If you have waited several minutes and suspect that there may be a problem you can press "Force Quit". This sometimes happens if the original images are too badly aligned for the processing to deal with. Mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
+For the 3D effect to work it is essential that each pair of images is prefectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. This step may take about 20 seconds per 3D image. If you switch windows while you are waiting you are likely to get a popup warning “Popout3D...is not responding.", just press "Wait". If you have waited several minutes and suspect that there may be a problem uou can press "Force  Quit".
 
 Note that an existing 3D image file will not be overwritten, so if you create a 3D file from a pair of images, then for some reason want to create a new 3D image from them you will need to move, rename or delete the existing 3D image file first. 
 
-You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.</property>
+You can run these programs yourself to experiment with other settings:
+Hugin - for image alignment - http://hugin.sourceforge.net/
+
+ImageMagick - for 3D image composition - http://www.imagemagick.org/</property>
                 <property name="wrap">True</property>
               </object>
               <packing>
@@ -1283,13 +1285,14 @@ Delete the 3D image being displayed. to ensure that you don't lose original imag
                 <property name="label" translatable="yes">This should only be necessary if the lenses of your 3D glasses are not well balanced.
 
 Adjusting
-The Brightness and Balance adjustments can be used when one or both lenses do not transmit enough light. 
+The Brightness and Balance adjustments can be used to allow for one or both lenses not allowing enough light through.
 
-Preference buttons
-Revert to the last value you saved with Save Preferences. 
+Revert buttons
+Reset to the last value you saved in Preferences. When first run the preference is for no brighness adjustment and a 30% bias to the right lens.
 
 Default buttons
-Revert to the default value of zero.
+Slight brightness increase and slight balance to right.
+
 </property>
                 <property name="wrap">True</property>
               </object>
@@ -1304,7 +1307,7 @@ Revert to the default value of zero.
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
                 <property name="valign">center</property>
-                <property name="label" translatable="yes">Anaglyph Colours</property>
+                <property name="label" translatable="yes">Anaglyph Image</property>
               </object>
               <packing>
                 <property name="position">5</property>
@@ -1334,11 +1337,13 @@ Revert to the default value of zero.
     <property name="gravity">center</property>
     <property name="transient-for">window</property>
     <property name="program-name">Popout3D</property>
-    <property name="version">Version 1.5.2</property>
-    <property name="website-label" translatable="yes">Create a 3D image from photographs taken with an ordinary camera.</property>
+    <property name="version">Version 0.5.2</property>
+    <property name="website-label" translatable="yes">Create a 3D picture from photographs taken with an ordinary camera.</property>
     <property name="license" translatable="yes">This program comes with absolutely no warranty.
 See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public Licence, version 3 or later&lt;/a&gt; for details.</property>
-    <property name="authors">Chris Rogers. Flatpak packaging by exalm, hfiguiere, barthalion and nedrichards.</property>
+    <property name="authors">Chris Rogers
+
+Flatpak packaging by exalm, hfiguiere, barthalion, nedrichards.</property>
     <property name="logo">popout3d.png</property>
     <property name="wrap-license">True</property>
     <property name="license-type">gpl-3-0</property>
@@ -1373,11 +1378,13 @@ See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pub
     <property name="message-type">other</property>
     <property name="buttons">close</property>
     <property name="text" translatable="yes">How to Use Popout3D</property>
-    <property name="secondary-text" translatable="yes">Take two photos of your subject, the second one from slightly to the right of the first. Copy them to your PC then rename them so that they have exactly the same name except that the left one has 'L' at the end and the right one has 'R'. For example photoL.JPG and photoR.JPG.
+    <property name="secondary-text" translatable="yes">Take two photos of your subject, the second one from slightly to the right of the first. Copy them to your PC then rename them so that they have exactly the same name except that the left one has a '-L' at the end and the right one has '-R'. For example photo-L.JPG and photo-R.JPG.
 
-Open Popout3D then use File&gt;Open to select photoL.JPG. Click Queue, then Process to begin processing, then wait a minute or two until the 3D image appears.
+Open Popout3D then use File&gt;Open to select photo-L.JPG. Click Start to begin processing, then wait a minute or two until the 3D image appears.
 
-You will need 3D glasses to see anaglyph images or practice to see side-by-side or crossover.</property>
+You will need 3D glasses to see anaglyph images or practice to see side-by-side or crossover. 
+------------------------------------------------------------------------------------------------------------
+If this application is being run as a Flatpak, there is no image alignment process. Please ignore statements in the Help about this.</property>
     <child internal-child="vbox">
       <object class="GtkBox">
         <property name="can-focus">False</property>

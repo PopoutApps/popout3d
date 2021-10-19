@@ -1,6 +1,6 @@
 project(
   'popout3d',
-  version: '0.5.1',
+  version: '1.5.2',
   meson_version: '>= 0.46.0'
 )
 
@@ -19,8 +19,9 @@ configure_file(
 )
 
 data_files = [
-  'popout3d.glade',  
-  'popout3d.png'
+  'popout3d.glade',
+  'popout3d.png',            #for Glade  
+  'com.github.PopoutApps.popout3d.png' #maybe desktop
 ]
 
 foreach file : data_files
@@ -31,15 +32,21 @@ install_data(
   'com.github.PopoutApps.popout3d.desktop',
   install_dir: join_paths(datadir, 'applications')
 )
+
 install_data(
   'popout3d.png', rename : 'com.github.PopoutApps.popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')
 )
+
+#install_data(
+#  'popout3d64x64.png', rename : 'com.github.PopoutApps.popout3d.png',
+#  install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
+#)
 install_data(
-  'popout3d64x64.png', rename : 'com.github.PopoutApps.popout3d.png',
+  'com.github.PopoutApps.popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
 )
 install_data(
-	'com.github.PopoutApps.popout3d.appdata.xml',
+  'com.github.PopoutApps.popout3d.appdata.xml',
   install_dir: join_paths(datadir, 'metainfo')  
 )

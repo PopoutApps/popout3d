@@ -1373,9 +1373,9 @@ See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pub
     <property name="message-type">other</property>
     <property name="buttons">close</property>
     <property name="text" translatable="yes">How to Use Popout3D</property>
-    <property name="secondary-text" translatable="yes">Take two photos of your subject, the second one from slightly to the right of the first. Copy them to your PC then rename them so that they have exactly the same name except that the left one has 'L' at the end and the right one has 'R'. For example photoL.JPG and photoR.JPG.
+    <property name="secondary-text" translatable="yes">Take two photos of your subject, the second one from slightly to the right of the first. Copy them to your PC then rename them so that they have exactly the same name except that the left one has a '-L' at the end and the right one has '-R'. For example photo-L.JPG and photo-R.JPG.
 
-Open Popout3D then use File&gt;Open to select photoL.JPG. Click Queue, then Process to begin processing, then wait a minute or two until the 3D image appears.
+Open Popout3D then use File&gt;Open to select photo-L.JPG. Click Start to begin processing, then wait a minute or two until the 3D image appears.
 
 You will need 3D glasses to see anaglyph images or practice to see side-by-side or crossover.</property>
     <child internal-child="vbox">
