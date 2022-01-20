@@ -101,7 +101,7 @@ if configfold != None:
 	configfold = configfold + '/'
 else:
 	configfold = os.getenv('HOME') + '/.config/popout3d/'
-print ('c',configfold)
+
 
 #-----project folder for Glade file	
 package = ''
@@ -169,7 +169,7 @@ def getpreferences():
 			view = prefdata[6]
 		else:
 			view = 'All'
-		print(prefdata); print(okpref)
+
 		#153 prefdata[7] was for firstrun
 		'''153 prefdata(8) was for colour and brightness balance
 		okcol = True
