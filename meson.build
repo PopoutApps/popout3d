@@ -1,6 +1,6 @@
 project(
   'popout3d',
-  version: '1.5.2',
+  version: '1.5.3',
   meson_version: '>= 0.46.0'
 )
 
@@ -12,7 +12,7 @@ conf = configuration_data()
 conf.set('pkgdatadir', pkgdatadir)
 
 configure_file(
-  input: 'popout3d.in',
+  input: 'popout3d.py',
   output: 'popout3d',
   configuration: conf,
   install_dir: bindir

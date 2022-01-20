@@ -40,227 +40,6 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
     <property name="upper">100</property>
     <property name="step-increment">1</property>
   </object>
-  <object class="GtkMessageDialog" id="messagedialogColours">
-    <property name="can-focus">False</property>
-    <property name="can-default">True</property>
-    <property name="window-position">center</property>
-    <property name="type-hint">utility</property>
-    <property name="gravity">center</property>
-    <property name="message-type">other</property>
-    <property name="buttons">close</property>
-    <property name="text" translatable="yes">Anaglyph Colours</property>
-    <child internal-child="vbox">
-      <object class="GtkBox">
-        <property name="can-focus">False</property>
-        <property name="halign">center</property>
-        <property name="margin-start">10</property>
-        <property name="margin-end">10</property>
-        <property name="margin-top">10</property>
-        <property name="margin-bottom">10</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox">
-            <property name="can-focus">False</property>
-            <property name="halign">end</property>
-            <property name="valign">center</property>
-            <property name="margin-top">10</property>
-            <property name="baseline-position">bottom</property>
-            <property name="layout-style">center</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <!-- n-columns=1 n-rows=1 -->
-          <object class="GtkGrid">
-            <property name="visible">True</property>
-            <property name="can-focus">False</property>
-            <property name="halign">center</property>
-            <property name="column-homogeneous">True</property>
-            <child>
-              <object class="GtkFrame">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label-xalign">0</property>
-                <property name="shadow-type">in</property>
-                <child>
-                  <!-- n-columns=1 n-rows=8 -->
-                  <object class="GtkGrid">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="margin-start">5</property>
-                    <property name="margin-end">5</property>
-                    <property name="margin-bottom">5</property>
-                    <property name="column-spacing">5</property>
-                    <property name="column-homogeneous">True</property>
-                    <child>
-                      <object class="GtkButton" id="buttonBrightRevert">
-                        <property name="label">Preference</property>
-                        <property name="width-request">125</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to saved preference.</property>
-                        <property name="halign">center</property>
-                        <property name="valign">center</property>
-                        <property name="image-position">right</property>
-                        <property name="always-show-image">True</property>
-                        <signal name="clicked" handler="buttonBrightRevertclicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="buttonBrightDefault">
-                        <property name="label">Default</property>
-                        <property name="width-request">125</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to default value.</property>
-                        <property name="halign">center</property>
-                        <property name="valign">center</property>
-                        <property name="image-position">right</property>
-                        <property name="always-show-image">True</property>
-                        <signal name="clicked" handler="buttonBrightDefaultclicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Brightness</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkScale" id="scaleBal">
-                        <property name="width-request">400</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="adjustment">adjustment4</property>
-                        <property name="show-fill-level">True</property>
-                        <property name="fill-level">1000000</property>
-                        <property name="round-digits">0</property>
-                        <property name="digits">0</property>
-                        <property name="has-origin">False</property>
-                        <signal name="value-changed" handler="scaleBalchanged" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Balance</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">5</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="buttonBalRevert">
-                        <property name="label">Preference</property>
-                        <property name="width-request">125</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to saved preference.</property>
-                        <property name="halign">center</property>
-                        <property name="valign">center</property>
-                        <property name="image-position">right</property>
-                        <property name="always-show-image">True</property>
-                        <signal name="clicked" handler="buttonBalRevertclicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">6</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="buttonBalDefault">
-                        <property name="label">Default</property>
-                        <property name="width-request">125</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="tooltip-text" translatable="yes">Revert to default value.</property>
-                        <property name="halign">center</property>
-                        <property name="valign">center</property>
-                        <property name="margin-bottom">6</property>
-                        <property name="image-position">right</property>
-                        <property name="always-show-image">True</property>
-                        <signal name="clicked" handler="buttonBalDefaultclicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">7</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkScale" id="scaleBright">
-                        <property name="height-request">300</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="orientation">vertical</property>
-                        <property name="adjustment">adjustment2</property>
-                        <property name="inverted">True</property>
-                        <property name="show-fill-level">True</property>
-                        <property name="fill-level">1000000</property>
-                        <property name="round-digits">0</property>
-                        <property name="digits">0</property>
-                        <property name="has-origin">False</property>
-                        <signal name="value-changed" handler="scaleBrightchanged" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left-attach">0</property>
-                        <property name="top-attach">3</property>
-                      </packing>
-                    </child>
-                  </object>
-                </child>
-                <child type="label">
-                  <object class="GtkLabel">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                  </object>
-                </child>
-              </object>
-              <packing>
-                <property name="left-attach">0</property>
-                <property name="top-attach">0</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">2</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
-  </object>
   <object class="GtkWindow" id="window">
     <property name="can-focus">False</property>
     <property name="window-position">center</property>
@@ -335,14 +114,6 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Save Preferences</property>
                         <signal name="activate" handler="menuitemPreferences" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkMenuItem" id="(colours)">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Anaglyph Colours</property>
-                        <signal name="activate" handler="messagedialogColours" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -463,38 +234,6 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                                 <property name="label-xalign">0.5</property>
                                 <property name="shadow-type">none</property>
                                 <child>
-                                  <object class="GtkImage" id="imageR">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="icon_size">0</property>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="labelImageR">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="valign">center</property>
-                                    <property name="ellipsize">end</property>
-                                    <property name="single-line-mode">True</property>
-                                    <attributes>
-                                      <attribute name="weight" value="bold"/>
-                                    </attributes>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="margin-start">10</property>
-                                <property name="label-xalign">0.5</property>
-                                <property name="shadow-type">none</property>
-                                <child>
                                   <object class="GtkImage" id="imageL">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
@@ -505,7 +244,10 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                                   <object class="GtkLabel" id="labelImageL">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
+                                    <property name="halign">center</property>
                                     <property name="valign">center</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="vexpand">True</property>
                                     <property name="ellipsize">end</property>
                                     <property name="single-line-mode">True</property>
                                     <attributes>
@@ -516,6 +258,44 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkFrame">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="margin-start">8</property>
+                                <property name="margin-end">8</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <property name="label-xalign">0.5</property>
+                                <property name="shadow-type">none</property>
+                                <child>
+                                  <object class="GtkImage" id="imageR">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="icon_size">0</property>
+                                  </object>
+                                </child>
+                                <child type="label">
+                                  <object class="GtkLabel" id="labelImageR">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="halign">center</property>
+                                    <property name="valign">center</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="ellipsize">end</property>
+                                    <property name="single-line-mode">True</property>
+                                    <attributes>
+                                      <attribute name="weight" value="bold"/>
+                                    </attributes>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
                                 <property name="top-attach">0</property>
                               </packing>
                             </child>
@@ -570,11 +350,9 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                 <property name="can-focus">False</property>
                 <property name="halign">center</property>
                 <child>
-                  <object class="GtkFrame" id="format frame1">
+                  <object class="GtkFrame" id="frameFormat">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="halign">center</property>
-                    <property name="valign">center</property>
                     <property name="label-xalign">0.5</property>
                     <child>
                       <!-- n-columns=1 n-rows=2 -->
@@ -938,7 +716,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="buttonStart">
+                          <object class="GtkButton" id="buttonProcess">
                             <property name="label" translatable="yes">Queue</property>
                             <property name="width-request">125</property>
                             <property name="visible">True</property>
@@ -948,7 +726,7 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                             <property name="valign">start</property>
                             <property name="margin-top">5</property>
                             <property name="margin-bottom">5</property>
-                            <signal name="clicked" handler="buttonStart" swapped="no"/>
+                            <signal name="clicked" handler="buttonProcess" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
@@ -1067,11 +845,11 @@ along with .  If not, see <http://www.gnu.org/licenses/>.
                 <property name="valign">start</property>
                 <property name="label" translatable="yes">You don't need a special camera, you can use an ordinary one or even a phone. Choose a subject that won't move between photos.
 
-Take two photographs of the same subject, one for the left-hand image, and after moving the camera slightly to the right (about 10cm), another for the right-hand image.  Try to get exactly the same point in the centre of both photos. It is difficult to get the spacing just right, and it is good to be able to choose how strong the 3D effect is, so it is best to take 3-5 photos at various spacings. Don't take too many in the same set as this will result in a large number of 3D images which will take a long time to process. Always take them in sequence from left to right so you don't get them mixed up. 
+Take two photographs of the same subject, one for the left-hand image, and after moving the camera slightly to the right (about 10cm), another for the right-hand image.  Try to get exactly the same point in the centre of both photos. It is difficult to get the spacing just right, and it is good to be able to choose how strong the 3D effect is, so it is best to take 3 photos at different spacings. Don't take too many in the same set as this will result in a large number of 3D images which will take a long time to process. Always take them in sequence from left to right so you don't get them mixed up. 
 
 Each set of images (all those for the same subject) must be in the same format - .jpg, .tiff or .png, and the extensions must have the same case - all lowercase or all uppercase. They must be exactly the same size in pixels. If they aren't you could use image editing software to cut the larger ones(s) down to match the size of the smallest. The Input files must be upright, if they are not, rotate them.
 
-The program won't read image files from a USB memory stick, camera or phone, so copy them onto your PC.
+The program may not be able to read/write image files on a USB memory stick, camera or phone, so it's best to copy them onto your PC.
 
 When you have loaded them onto your PC, make sure that all images in the same set have the same filename ending in a digit that increases for the images which were taken from left to right, for example:
 DSCN0362.JPG
@@ -1214,6 +992,14 @@ For the 3D effect to work it is essential that each pair of images is prefectly 
 
 Note that an existing 3D image file will not be overwritten, so if you create a 3D file from a pair of images, then for some reason want to create a new 3D image from them you will need to move, rename or delete the existing 3D image file first. 
 
+Notes
+    Portrait images from a phone may be landscape photos with a rotation tag, the program attempts to rotate them to portrait before processing. It doesn't change the originals.
+    The 3D images won't have EXIF tags.
+    Avoid images with all red or all cyan objects as they only appear in one eye so look weird.
+    You may need to view 3D images from further away than you might expect.
+    Strange effects from nearby objects might be caused by the camera's depth of field being high. A shorter exposure will reduce the depth of field.
+    Note that preferences from previous program versions are not loaded.
+
 You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.</property>
                 <property name="wrap">True</property>
               </object>
@@ -1334,7 +1120,7 @@ Revert to the default value of zero.
     <property name="gravity">center</property>
     <property name="transient-for">window</property>
     <property name="program-name">Popout3D</property>
-    <property name="version">Version 1.5.2</property>
+    <property name="version">Version 1.5.3</property>
     <property name="website-label" translatable="yes">Create a 3D image from photographs taken with an ordinary camera.</property>
     <property name="license" translatable="yes">This program comes with absolutely no warranty.
 See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public Licence, version 3 or later&lt;/a&gt; for details.</property>
@@ -1367,15 +1153,16 @@ See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Pub
   <object class="GtkMessageDialog" id="messagedialogFirst">
     <property name="can-focus">False</property>
     <property name="type">popup</property>
+    <property name="window-position">center</property>
     <property name="type-hint">utility</property>
     <property name="gravity">center</property>
     <property name="transient-for">window</property>
     <property name="message-type">other</property>
     <property name="buttons">close</property>
     <property name="text" translatable="yes">How to Use Popout3D</property>
-    <property name="secondary-text" translatable="yes">Take two photos of your subject, the second one from slightly to the right of the first. Copy them to your PC then rename them so that they have exactly the same name except that the left one has a '-L' at the end and the right one has '-R'. For example photo-L.JPG and photo-R.JPG.
+    <property name="secondary-text" translatable="yes">Take two photos of your subject, the second one from slightly to the right of the first. Copy them to your PC then rename them so that they have exactly the same name except that the left one has 'L' at the end and the right one has 'R'. For example photoL.JPG and photoR.JPG.
 
-Open Popout3D then use File&gt;Open to select photo-L.JPG. Click Start to begin processing, then wait a minute or two until the 3D image appears.
+Open Popout3D then use File&gt;Open to select photoL.JPG. Click Queue to see which 3D images will be created, then  click Process to begin processing. Wait a minute or two until the 3D image appears.
 
 You will need 3D glasses to see anaglyph images or practice to see side-by-side or crossover.</property>
     <child internal-child="vbox">

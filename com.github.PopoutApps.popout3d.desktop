@@ -6,4 +6,4 @@ Icon=com.github.PopoutApps.popout3d
 Type=Application
 Terminal=false
 StartupNotify=true
-Categories=Graphics;Photography;ImageProcessing
+Categories=Photography;ImageProcessing;Graphics
