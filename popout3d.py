@@ -8,8 +8,7 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
-	the Free Software Fou
-	ndation, either version 3 of the License, or
+	the Free Software Foundation, either version 3 of the License, or
 	(at your option) any later version.
 
 	This program is distributed in the hope that it will be useful,
@@ -20,13 +19,14 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 	You should have a copy of the GNU General Public License
 	in /usr/share/common-licenses/GPL-3. If not, 
 	see <http://www.gnu.org/licenses/>.
+	
 --------------------------------------------------------------------------------
-
 '''
-
 # Depends on hugin_tools for align_image_stack.
 import sys, os, shutil, subprocess, shlex #153 remove colorsys, math
-from PIL import Image, ExifTags, ImageOps #153 remove ImageEnhance add ImageOps
+#from PIL import Image, ExifTags, ImageOps, __version__ #153 remove ImageEnhance add ImageOps for orientation
+from PIL import Image, ImageOps, __version__ #153 remove ImageEnhance add ImageOps for orientation
+from PIL.ExifTags import TAGS
 
 try:
 	import gi
@@ -52,6 +52,7 @@ viewlist = []									# list of images to view
 viewind = 0										# index of image to view
 viewtext = ''
 
+dummyfile = 'dummy.png'       # blank image to display when one is missing.
 gladefile = 'popout3d.glade'
 preffile = 'popout3d.dat'			# user preference file
 myfile = '{None}'							# current file
@@ -60,24 +61,25 @@ myext = '{None}'							# current extension
 scope = 'Folder'
 
 formatcode = 'A'							# first letter of format
-stylecode = 'P'								# first letter of style
+stylecode = 'N'								# first letter of style
 pairlist = []								  # list of pairs to process
 warnings = ''									# list of Processed warnings
 
 okchar = ['0','1','2','3','4','5','6','7','8','9','L','R'] #last char in 2D filename
-okext	= ['jpg','JPG','jpeg','JPEG','tif','TIF','tiff','TIFF','png','PNG']
+okext	= ['jpg','JPG','jpeg','JPEG','png','PNG','tif','TIF','tiff','TIFF']
 okformat = ['A','S','C']			# Anaglyph/Side-by-Side/Crossover
 okstyle	= ['N','P'] 					# Normal/Popout
 
 '''
-Added by exalm
-$XDG_DATA_HOME defines the base directory relative to which user specific data files should be stored. 
+Added by exalm:
+	$XDG_DATA_HOME defines the base directory relative to which user specific data files should be stored. 
 	If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used.
 	Done.
-$XDG_CONFIG_HOME defines the base directory relative to which user specific configuration files should be stored. 
+	$XDG_CONFIG_HOME defines the base directory relative to which user specific configuration files should be stored. 
 	If $XDG_CONFIG_HOME is either not set or empty, a default equal to $HOME/.config should be used.
 	Not done.
 '''
+
 #-----home folder
 homefold = os.getenv('XDG_HOME')
 if homefold != None:
@@ -102,7 +104,6 @@ if configfold != None:
 else:
 	configfold = os.getenv('HOME') + '/.config/popout3d/'
 
-
 #-----project folder for Glade file	
 package = ''
 if os.path.exists('/.flatpak-info'): 
@@ -112,14 +113,14 @@ elif package == 'debian':
 	if datafold != None:
 		datafold = datafold + '/popout3d/'
 	else:
-		#datafold = os.getenv('HOME') + '/.config/popout3d/' ~~~
-		datafold = '/usr/share/popout3d/'
+		datafold = os.getenv('HOME') + '/.config/popout3d/'
+		#datafold = '/usr/share/popout3d/' #1.5.3
 else: # no package
 	datafold = ''
 
 #-------------------------------------------------------------------------------		
 def getpreferences():
-	global version, myfold, myfile, myext, qformatcode, qstylecode, view, scope, firstrun
+	global version, myfold, myfile, myext, formatcode, stylecode, view, scope, firstrun
 	#choiceBright, choiceBal, preferenceBright, preferenceBal
 	# local okpref, okcol, x, i
 	# Prference files is not present when program in installed, so is a guide to
@@ -218,38 +219,70 @@ def getpreferences():
 		#153 fn.write(str(preferenceBright)+' '+str(preferenceBal)+'\n')
 
 	#153 choiceBright = preferenceBright; choiceBal = preferenceBal
-	
-#===============================================================================		 
-def exif(self, filename, newext):
-	file, rubbish = os.path.splitext(filename)
-	rotated = False
-
-	if (newext in ('jpg','JPG','jpeg','JPEG') 
-		and not (file[-4] in okchar and file[-3] in okchar 
-				and file[-2] in okformat and file[-1] in okstyle)):
-		if os.path.isfile(myfold+filename):
-			image = Image.open(myfold+filename)
-		else:
-			return False
-			try: 
-				for orientation in ExifTags.TAGS.keys():
-					if ExifTags.TAGS[orientation] == 'Orientation':
-						break
-			except (AttributeError, KeyError, IndexError): # no exif
-				return False
-				
-			exif = image.getexif()
-			if exif[orientation] in [3,6,9]:
-				image = ImageOps.exif_transpose(image)
-				rotated = (True)
-				image.save(workfold+filename, quality=95, subsampling=0) #subsampling='4:4:4')
-
-			image.close()		 
-
-	return rotated	 
 
 #===============================================================================
-def findNew():
+def showMessage(self, which, message):
+	if which == 'warn':
+		self.messageWarning.format_secondary_text(message)
+		self.result = self.messageWarning.run() ; self.messageWarning.hide()
+	elif which == 'ask':
+		self.messageQuestion.format_secondary_text(message)
+		self.result = self.messageQuestion.run() ; self.messageQuestion.hide()
+		if self.result == Gtk.ResponseType.YES:
+			return 'Yes'
+		else:
+			return 'No'
+	else: #153
+		return 'No'
+	#else: #info		
+	#	self.messageInfo.format_secondary_text(message)
+	#	self.result = self.messageInfo.run() ; self.messageInfo.hide()	
+
+#===============================================================================		 
+def exif(newfilename, newext, processing):
+	global pixbuf, error
+	# local orientation
+	orientation = -1
+	
+	if os.path.isfile(myfold+newfilename+'.'+newext):
+		image = Image.open(myfold+newfilename+'.'+newext)
+	else:		
+		return -2
+	
+	try:
+		image_exif = image.getexif()
+	except AssertionError as error:
+		print('image.exif() error: ', error)
+		return -1
+
+	for tag_id in image_exif:
+		tag=TAGS.get(tag_id,tag_id)
+		data=image_exif.get(tag_id)
+		if isinstance(data,bytes):
+			try:
+				data=data.decode()
+			except:
+				continue	
+		#print(f"{tag:20}:{data}")
+		if tag == 'Orientation':
+			orientation = data
+		
+	# save rotated file for processing
+	if processing:
+		if orientation in [3, 6, 8]: #rotate image	
+			image = ImageOps.exif_transpose(image)
+			image.save(workfold+newfilename+'.'+newext, quality=95, subsampling='4:4:4')
+			image.close
+			return orientation
+		else:
+			image.close
+			return -1
+	else: # for showImage
+		image.close
+		return orientation
+	
+#===============================================================================
+def findMatch():
 	global viewind # local searchlength, char1, char2, charN, viewindL, viewindR, viewindN
 
 	if len(viewlist) > 0 and view != 'All': # Can use same image if TO All
@@ -300,107 +333,103 @@ def findNew():
 				viewind = viewindN
 			else:
 				viewind = -1
-
+	'''
+	if len(viewlist) > 0:
+		if viewind > len(viewlist) -1:
+			print('List indicator too big', len(viewlist), viewind)
+		elif viewind < 0:
+			print('List indicator negative', len(viewlist), viewind)
+			#viewind = -1	
+	'''
+			
 #===============================================================================
 def findNext(direction):
 	global viewind
 	#local showit
-	
-	tryviewind = viewind; showit = False
 
+	tryviewind = viewind; showit = False
 	if direction == '>':
 		tryviewind = tryviewind +1
 	else:
 		tryviewind = tryviewind -1
- 	
+ 			
 	while showit == False and len(viewlist) > 0 and tryviewind > -1 and tryviewind < len(viewlist): 
 		if (view in ('All', '3D', 'Triptych') and viewlist[tryviewind][2] == '3D') or (view in ('All', '2D') and viewlist[tryviewind][2] == '2D'):
 			showit = True	
 			viewind = tryviewind
-			#showImage(self)
 		elif direction == '>':
 			tryviewind = tryviewind +1
 		else:
 			tryviewind = tryviewind -1
 
 #===============================================================================
-def showMessage(self, which, message):
-	if which == 'warn':
-		self.messageWarning.format_secondary_text(message)
-		self.result = self.messageWarning.run() ; self.messageWarning.hide()
-	elif which == 'ask':
-		self.messageQuestion.format_secondary_text(message)
-		self.result = self.messageQuestion.run() ; self.messageQuestion.hide()
-		if self.result == Gtk.ResponseType.YES:
-			return('Yes')
-		else:
-			return('N')
-	else: #info		
-		self.messageInfo.format_secondary_text(message)
-		self.result = self.messageInfo.run() ; self.messageInfo.hide()	
-
-#===============================================================================
 def showImage(self):
-	global viewind
-	rotated = False; LRmissing = ''
+	global viewind, firstpress
+	
 	self.image1.clear(); self.imageL.clear(); self.imageR.clear()
 	self.labelImage1.set_text(''); self.labelImageL.set_text(''); self.labelImageR.set_text('')
 
 	# valid image
-	if len(viewlist) > 0 and not firstpress:
+	if len(viewlist) > 0 and viewind > -1 and not firstpress:
 		# select currently indicated image from viewlist			
 		newfilename = viewlist[viewind][0]; newext = viewlist[viewind][1]
-		if os.path.isfile(myfold+newfilename+'.'+newext):
-			rotated = exif(self, newfilename, newext)
-				
-			allocation = self.window.get_allocation()
-			width = int(allocation.width*7/10); height = int(allocation.height*8/10)
+		allocation = self.window.get_allocation()
+		width = int(allocation.width*7/10); height = int(allocation.height*8/10)
 
-			if view == 'Triptych':
-				width = int(width/2) ; height = int(height/2)
+		orientation = exif(newfilename, newext, False)
+		if orientation == 3: # upside down, so rotate 180 clockwise
+			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, width, height, True), 180)
+		elif orientation == 6: # top at right so rotate 270 clockwise
+			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, height, width, True), 270)
+		elif orientation == 8: #top pointing left so rotate 90 clockwise
+			GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, height, width, True), 90)
+		elif orientation == -2:
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+dummyfile+'.'+newext, width, height, True)		
+		else: #already upright
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, width, height, True)
 
-				newfilenameL = viewlist[viewind][0][:-4]+viewlist[viewind][0][-4]; newextL = viewlist[viewind][1] 
-				newfilenameR = viewlist[viewind][0][:-4]+viewlist[viewind][0][-3]; newextR = viewlist[viewind][1]
+		# two 2D images for triptych	
+		if view == 'Triptych':
+			width = int(width/2) ; height = int(height/2)
+			# Left 2D image
+			newfilenameL = viewlist[viewind][0][:-4]+viewlist[viewind][0][-4]; newextL = viewlist[viewind][1] 
+			orientationL = exif(newfilenameL, newextL, False)
 
-				if os.path.isfile(myfold+newfilenameL+'.'+newextL) and os.path.isfile(myfold+newfilenameR+'.'+newextR):
+			if orientationL == 3: # upside down, so rotate 180 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True), 180)
+			elif orientationL == 6: # top at right so rotate 270 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, height, width, True), 270)
+			elif orientationL == 8: #top pointing left so rotate 90 clockwise
+				GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, height, width, True), 90)
+			elif orientation == -2:
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+dummyfile+'.'+newext, width, height, True)
+			else: #already upright
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True)
 
-					rotated1 = exif(self, newfilenameL, newextL)
-					rotated2 = exif(self, newfilenameR, newextR)
-	
-					if rotated1 and rotated2:
-						if os.path.isfile(workfold+newfilenameL+'.'+newextL) and os.path.isfile(workfold+newfilenameR+'.'+newextR):	
-							pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+newfilenameL+'.'+newextL, width, height, True)
-							self.imageL.set_from_pixbuf(pixbuf); self.labelImageL.set_text(newfilenameL+'.'+newextL)
-							pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+newfilenameR+'.'+newextR, width, height, True)
-							self.imageR.set_from_pixbuf(pixbuf); self.labelImageR.set_text(newfilenameR+'.'+newextR)
-					else:			
-						pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True)
-						self.imageL.set_from_pixbuf(pixbuf); self.labelImageL.set_text(newfilenameL+'.'+newextL)
-						pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True)
-						self.imageR.set_from_pixbuf(pixbuf); self.labelImageR.set_text(newfilenameR+'.'+newextR)
-				else:
-					LRmissing = ' (One or both 2D images are missing)'
-				
-			# main image
-			if rotated:
-				if os.path.isfile(workfold+newfilename+'.'+newext):				
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+newfilename+'.'+newext, width, height, True)
-					self.image1.set_from_pixbuf(pixbuf); self.labelImage1.set_text(newfilename+'.'+newext)
-			else:
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, width, height, True)
-				self.image1.set_from_pixbuf(pixbuf)
-				self.labelImage1.set_text(newfilename+'.'+newext+LRmissing)
-				
-		# delete rotated files if present
-		if rotated:
-			if os.path.isfile(workfold+newfilename+'.'+newext):
-				os.remove(workfold+newfilename+'.'+newext)
-			if view == 'Triptych':
-				if os.path.isfile(workfold+newfilenameL+'.'+newextL):
-					os.remove(workfold+newfilenameL+'.'+newextL)
-				if os.path.isfile(workfold+newfilenameR+'.'+newextR):
-					os.remove(workfold+newfilenameR+'.'+newextR) 
+			self.imageL.set_from_pixbuf(pixbuf)
+			self.labelImageL.set_text(newfilenameL+'.'+newextL)
 
+			# Right 2D image
+			newfilenameR = viewlist[viewind][0][:-4]+viewlist[viewind][0][-3]; newextR = viewlist[viewind][1]
+			orientationR = exif(newfilenameR, newextR, False)
+
+			if orientationR == 3: # upside down, so rotate 180 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True), 180)
+			elif orientationR == 6: # top at right so rotate 270 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, height, width, True), 270)
+			elif orientationR == 8: #top pointing left so rotate 90 clockwise
+				GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, height, width, True), 90)
+			elif orientation == -2:
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+dummyfile+'.'+newext, width, height, True)
+			else: #already upright
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True)
+
+			self.imageR.set_from_pixbuf(pixbuf)
+			self.labelImageR.set_text(newfilenameR+'.'+newextR)
+
+		# image 1 must be last so it doesn't take all the space in a Triptych
+		self.image1.set_from_pixbuf(pixbuf)
+		self.labelImage1.set_text(newfilename+'.'+newext)
 #===============================================================================
 def makeviewlist(self):
 	global viewlist, viewind, pairlist
@@ -474,7 +503,6 @@ def makeviewlist(self):
 	self.image1.clear() ; self.labelImage1.set_text('') 
 
 #===============================================================================
-# create set of images for processPair
 def makepairlist(self, newfile, newformatcode, newstylecode, newext):
 	global warnings, pairlist, viewtext, view
 	# local imagestodo, imagesok
@@ -503,6 +531,7 @@ def makepairlist(self, newfile, newformatcode, newstylecode, newext):
 		leftn = 0 ; rightn = 1
 		while leftn < 9: # only single digits
 
+			# look for images ending in 1-9
 			rightn = leftn + 1
 			while rightn < 10: # top number is 9
 				# if left and right images exist and there is no existing 3D one
@@ -512,33 +541,38 @@ def makepairlist(self, newfile, newformatcode, newstylecode, newext):
 				rightn = rightn + 1
 			leftn = leftn + 1
 
-		# L and R at the end # if L and R images exist and there is no existing 3D one	 
+		# look for images ending in L and R
 		if (os.path.isfile(myfold+newfile+'L'+'.'+newext) and os.path.isfile(myfold+newfile+'R'+'.'+newext)
  		 and not os.path.isfile(myfold+newfile+'LR'+newformatcode+newstylecode+'.'+newext)) and [newfile, 'L', 'R', newformatcode, newstylecode, newext] not in pairlist:
 			 pairlist.append([newfile, 'L', 'R', newformatcode, newstylecode, newext])
 
 #===============================================================================
 def processPair(self, newfile, leftn, rightn, newformatcode, newstylecode, newext):
-	
+	global warnings
+	#local orientationL, orientationR, infold
+		
 	# make filenames then call align_image_stack
-	fileleft	= newfile+leftn+'.'+newext
-	rotated = exif(self, fileleft, newext)
-	
-	fileright = newfile+rightn+'.'+newext
-	exif(self, fileright, newext) # assume if first image was rotated, both are
-	
 	#153 fileout	 = newfile+leftn+rightn+formatcode+stylecode+'.'+newext
 	fileout	= newfile+leftn+rightn+newformatcode+newstylecode+'.'+newext
+	fileleft	= newfile+leftn+'.'+newext
+	fileright = newfile+rightn+'.'+newext
+	# turn image if needed and put into workfold
+	orientationL = exif(newfile+leftn, newext, True)
+	orientationR = exif(newfile+rightn, newext, True)
 
+	# get from workfold if turned
+	if orientationL in (3, 6, 8) or orientationR in (3, 6, 8): #turned
+		infold = workfold
+	else: # not turned -1 or not found -2
+		infold = myfold			
+
+	#replace A and P with styleAIS
 	if stylecode == 'N':		
-		styleletter = 'A'
+		styleAIS = 'A'
 	else:
-		styleletter = 'P'
+		styleAIS = 'P'
 
-	if rotated: #replace A and P with styleletter
-		command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i --use-given-order -"'+styleletter+'" -C "'+workfold+fileright+'" "'+workfold+fileleft+'"' #-v {verbose}
-	else:
-		command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i --use-given-order -"'+styleletter+'" -C "'+myfold+fileright+'" "'+myfold+fileleft+'"' #-v {verbose}
+	command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i --use-given-order -"'+styleAIS+'" -C "'+infold+fileright+'" "'+infold+fileleft+'"' #-v {verbose}
 		#command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+workfold+'right.'+newext+'" "'+workfold+'left.'+newext+'"' 
 
 	args = shlex.split(command) 
@@ -547,11 +581,11 @@ def processPair(self, newfile, leftn, rightn, newformatcode, newstylecode, newex
 	result = str(result)[str(result).find("returncode")+11] # Output of command is CompletedProcess(args='?', returncode=0)
 	result = int(result)
 
-	if rotated:
-		if os.path.isfile(workfold+fileleft):
-			os.remove(workfold+fileleft)
-		if os.path.isfile(workfold+fileright):
-			os.remove(workfold+fileright) 
+	# remove turned images if they exist
+	if os.path.isfile(workfold+fileleft):
+		os.remove(workfold+fileleft)
+	if os.path.isfile(workfold+fileright):
+		os.remove(workfold+fileright) 
 
 	# align_image_stack has worked
 	if result == 0: 
@@ -627,7 +661,7 @@ class GUI:
 
 	def menuitemFolder(self, menuitem):
 		global myfold, myfile, myext, scope, pairlist, view
-
+		pairlist = []; self.buttonProcess.set_label('Queue')	
 		scope = 'Folder'; view = 'All'
 			
 		filechooser = Gtk.FileChooserNative.new(title='Select the Folder where the images are', parent = self.window, action=Gtk.FileChooserAction.SELECT_FOLDER)
@@ -645,7 +679,7 @@ class GUI:
 	def menuitemSet(self, menuitem):
 		global myfold, myfile, myext, scope, pairlist, view
 		#local okfold
-
+		pairlist = []; self.buttonProcess.set_label('Queue')	
 		scope = 'Set'; view = 'All'
 
 		filechooser = Gtk.FileChooserNative.new(title="Select any file from a set of images", parent = self.window, action=Gtk.FileChooserAction.OPEN)
@@ -679,11 +713,10 @@ class GUI:
 				else:
 					okfile = False
 			else:
-				okfile = False						 
+				okfile = False
 								
 		if okfile == True:
 			os.chdir(newfold)
-			#heading was set here with set name
 			makeviewlist(self) ; showImage(self)
 		else:
 			if newfile != '{None}':
@@ -701,19 +734,14 @@ class GUI:
 					fn.write(formatcode+'\n')
 					fn.write(stylecode+'\n')
 					fn.write(view+'\n')
-					fn.write('No\n')
 					#153fn.write(str(choiceBright)+' '+str(choiceBal)+'\n')
 					#153preferenceBright = choiceBright; preferenceBal = choiceBal
 				except:
 					print('Failed to write preference file.')
-
-	def messagedialogColours(self, menuitem):
-		self.messagedialogColours.run()
-		self.messagedialogColours.hide()	 
 			
 	def menuitemHelp(self, menuitem):
-		self.dialogHelp.run() ; self.dialogHelp.hide()
-
+		self.dialogHelp.run(); self.dialogHelp.hide()
+			
 	def buttonClose(self, menuitem):
 		self.dialogHelp.hide()
 				
@@ -724,25 +752,25 @@ class GUI:
 		global view
 		if menuitem.get_active():	
 			view = 'All'
-			findNew(); showImage(self)
+			findMatch(); showImage(self)
 				
 	def radiobuttontoggled2D(self, menuitem):
 		global view
 		if menuitem.get_active():
 			view = '2D'
-			findNew(); showImage(self)
+			findMatch(); showImage(self)
 			
 	def radiobuttontoggled3D(self, menuitem):
 		global view
 		if menuitem.get_active():
 			view = '3D'
-			findNew(); showImage(self)
+			findMatch(); showImage(self)
 			
 	def radiobuttontoggledTriptych(self, menuitem):
 		global view
 		if menuitem.get_active():
 			view = 'Triptych'
-			findNew(); showImage(self)
+			findMatch(); showImage(self)
 			
 	def radiobuttontoggledAnaglyph(self, radiobutton):
 		global formatcode, pairlist
@@ -783,7 +811,7 @@ class GUI:
 		global warnings, view, pairlist, viewtext #viewtext 154
 		# local okleft, okright
 		# pairlist filename style is name less last digit (no 3D at start)		
-
+		warnings = ''
 		if pairlist == []: 
 			firstlist = [];	warnings = ''
 			
@@ -819,23 +847,27 @@ class GUI:
 		else: #list not empty so process them
 			self.image1.clear(); self.labelImage1.set_text('')
 
-			warnings = []
+			warnings = ''
 			for i in pairlist: # open images and get image type and size
 				try:
-					img = Image.open(myfold+i[0]+i[1]+'.'+i[5])
-					imageLeftFormat = img.format ; imageLeftSize = img.size
+					image = Image.open(myfold+i[0]+i[1]+'.'+i[5])
+					imageLeftFormat = image.format ; imageLeftSize = image.size
 					okleft = True
+					image.close
 				except:
 					warnings = warnings +'Unable to load left image '+myfold+i[0]+i[1]+'.'+i[5]+'.\n'
 					okleft = False
+					image.close
 
 				try:
-					img = Image.open(myfold+i[0]+i[2]+'.'+i[5])
-					imageRightFormat = img.format ; imageRightSize = img.size
+					image = Image.open(myfold+i[0]+i[2]+'.'+i[5])
+					imageRightFormat = image.format ; imageRightSize = image.size
 					okright = True
+					image.close
 				except:
 					warnings = warnings +'Unable to load right image '+myfold+i[0]+i[2]+'.'+i[5]+'.\n'
 					okright = False
+					image.close
 			
 				if okleft and okright:
 					# if images match on type and size align them, else skip and warn
@@ -848,9 +880,10 @@ class GUI:
 						if imageLeftSize != imageRightSize:
 							warnings = warnings +i[0]+i[1]+'.'+i[5]+' '+str(imageLeftSize)+' and '+i[0]+i[2]+'.'+i[5]+' '+str(imageRightSize)+' can not be used as their dimensions do not match.\n'
 
-			if warnings != []:
+			if warnings != '':
 				showMessage(self, 'warn', warnings)
-	
+
+			pairlist = []; self.buttonProcess.set_label('Queue')	
 			view = '3D';  makeviewlist(self); showImage(self)
 			self.buttonProcess.set_label('Queue')
 			
@@ -858,54 +891,54 @@ class GUI:
 		global firstpress
 		findNext('<')		
 		firstpress = False
-		showImage(self)		
+		showImage(self)
 				
 	def buttonForward(self, menuitem):
 		global firstpress
-		if not firstpress:
-			findNext('>')
+		if not firstpress: #it's already on first image, this is so it shows first image rather than going to second.
+			findNext('>')	
 		firstpress = False
 		showImage(self)		
-		
+				
 	def buttonDelete(self, button): #menuitem
 		global viewind
-								 
-		if len(viewlist) > 0:
-			if len(viewlist[viewind][0]) > 4:
-				if (viewlist[viewind][0][-4] in okchar
-				 and viewlist[viewind][0][-3] in okchar and viewlist[viewind][0][-2] in okformat
-				 and viewlist[viewind][0][-1] in okstyle):	
-				 			
-					if os.path.isfile(myfold+viewlist[viewind][0]+'.'+viewlist[viewind][1]):
-						result = showMessage(self, 'ask', 'Delete ' + viewlist[viewind][0]+'.'+viewlist[viewind][1] + '?')
-						if result == 'Yes':
-							self.image1.clear() ; self.labelImage1.set_text('')
-							self.imageL.clear() ; self.labelImageL.set_text('')
-							self.imageR.clear() ; self.labelImageR.set_text('')
-							try: 
-								os.remove(myfold+viewlist[viewind][0]+'.'+viewlist[viewind][1])
-							except:
-								showMessage(self,	'warn', 'File already deleted.')
+		#local ok
 
-							# remember position before rewriting list
-							oldviewind = viewind ;	makeviewlist(self) 
-							viewind = oldviewind ;	showImage(self)
+		if len(viewlist) > 0:
+			if os.path.isfile(myfold+viewlist[viewind][0]+'.'+viewlist[viewind][1]):
+				if viewlist[viewind][2] == '3D':			
+					result = showMessage(self, 'ask', 'Delete ' + viewlist[viewind][0]+'.'+viewlist[viewind][1] + '?')
+					if result == 'Yes':
+						self.image1.clear() ; self.labelImage1.set_text('')
+						self.imageL.clear() ; self.labelImageL.set_text('')
+						self.imageR.clear() ; self.labelImageR.set_text('')
+						#1.5.3
+						ok = True 
+						try: 
+							os.remove(myfold+viewlist[viewind][0]+'.'+viewlist[viewind][1])
+						except:
+							ok = False
+							showMessage(self,	'warn', 'File already deleted.')
+						if ok:
+							makeviewlist(self); findNext('<'); showImage(self) 
 				else:
 					showMessage(self, 'warn', 'Only 3D images can be deleted.')							
 			else:
-				showMessage(self, 'warn', 'Only 3D images can be deleted.')							
+				showMessage(self, 'warn', 'Image does not exist.')							
+		else:
+			showMessage(self, 'warn', 'No 3D images to delete.')							
 
 	def __init__(self):
 		self.glade = datafold+gladefile
 
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file(self.glade)		 
-		self.builder.connect_signals(self) ##
+		self.builder.connect_signals(self)
 		 
 		self.window = self.builder.get_object('window')
 		self.image1 = self.builder.get_object('image1')
-		self.imageR = self.builder.get_object('imageL')
-		self.imageL = self.builder.get_object('imageR')
+		self.imageL = self.builder.get_object('imageL')
+		self.imageR = self.builder.get_object('imageR')
 
 		self.labelImage1 = self.builder.get_object('labelImage1')
 		self.labelImageL = self.builder.get_object('labelImageL')
@@ -923,9 +956,8 @@ class GUI:
 
 		self.messageQuestion = self.builder.get_object('messagedialogQuestion')
 		self.messageWarning = self.builder.get_object('messagedialogWarning')
-		self.messageInfo = self.builder.get_object('messagedialogInfo')
+		#153 self.messageInfo = self.builder.get_object('messagedialogInfo')
 		self.messageFirst = self.builder.get_object('messagedialogFirst')
-		self.messagedialogColours = self.builder.get_object('messagedialogColours')
 
 		# for reading buttons		
 		self.radiobuttontoggledAll = self.builder.get_object('radiobuttontoggledAll')
@@ -959,10 +991,10 @@ class GUI:
 		# set preference variables and set title
 		getpreferences()
 
-		if scope == 'Set':
-			self.window.set_title(version + '			Set: ' + myfile + '*.' + myext)
-		else:
-			self.window.set_title(version + '			Folder: ' + myfold)
+		#if scope == 'Set': #~~~
+		#	self.window.set_title(version + '			Set: ' + myfile + '*.' + myext)
+		#else:
+		#	self.window.set_title(version + '			Folder: ' + myfold)
 			 
 		if formatcode == 'S': # Side-by-Side
 			self.radiobuttonSidebyside.set_active(True)
@@ -975,7 +1007,7 @@ class GUI:
 			self.radiobuttonPopout.set_active(True)
 		else: # Normal
 			self.radiobuttonNormal.set_active(True)
-		
+
 		if view == '2D':
 			self.radiobutton2D.set_active(True)
 		elif view == '3D':
@@ -987,7 +1019,9 @@ class GUI:
 
 		if firstrun:
 			self.result = self.messageFirst.run() ; self.messageFirst.hide()
-			
+
+		makeviewlist(self); showImage(self)
+		
 #===============================================================================
 if __name__ == '__main__':	
 	main = GUI()	

@@ -20,8 +20,9 @@ configure_file(
 
 data_files = [
   'popout3d.glade',
-  'popout3d.png',            #for Glade  
-  'com.github.PopoutApps.popout3d.png' #maybe desktop
+  'popout3d.png',                       #for Glade  
+  'com.github.PopoutApps.popout3d.png', #maybe desktop
+  'dummy.png'                           #V1.5.3
 ]
 
 foreach file : data_files
