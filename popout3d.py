@@ -23,7 +23,7 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 --------------------------------------------------------------------------------
 '''
 # Depends on hugin_tools for align_image_stack.
-import sys, os, shutil, subprocess, shlex #153 remove colorsys, math
+import sys, os, shutil, subprocess, shlex, glob #153 remove colorsys, math add glob
 #from PIL import Image, ExifTags, ImageOps, __version__ #153 remove ImageEnhance add ImageOps for orientation
 from PIL import Image, ImageOps, __version__ #153 remove ImageEnhance add ImageOps for orientation
 from PIL.ExifTags import TAGS
@@ -151,11 +151,13 @@ def getpreferences():
 			myfold = prefdata[1]
 		else:
 			myfold = homefold
-						
+		
 		myfile = prefdata[2] ; myext = prefdata[3]; scope = 'Set'
-		if not os.path.exists(myfile+myext):
+		#153 note this doesn't check the ? character is valid, but it shouldn't be possible
+		# to save an invalid one. Should only occur if preference file was edited
+		if not glob.glob(myfold+'/'+myfile+'?.'+myext): 
 			myfile == '{None}'; myext == '{None}'; scope = 'Folder'
-
+		
 		if prefdata[4] in ['A', 'S', 'C']: # Anaglyph/Side-by-Side/Crossover
 			formatcode = prefdata[4]
 		else:
@@ -430,9 +432,11 @@ def showImage(self):
 		# image 1 must be last so it doesn't take all the space in a Triptych
 		self.image1.set_from_pixbuf(pixbuf)
 		self.labelImage1.set_text(newfilename+'.'+newext)
+
 #===============================================================================
 def makeviewlist(self):
 	global viewlist, viewind, pairlist
+	self.window.set_title('makeviewlist'+str(viewind))
 	#local variables newfile, newext, viewtext
 
 	viewlist = []
@@ -660,7 +664,7 @@ class GUI:
 		Gtk.main_quit()
 
 	def menuitemFolder(self, menuitem):
-		global myfold, myfile, myext, scope, pairlist, view
+		global myfold, myfile, myext, scope, pairlist, view, viewind#~
 		pairlist = []; self.buttonProcess.set_label('Queue')	
 		scope = 'Folder'; view = 'All'
 			
@@ -674,15 +678,17 @@ class GUI:
 			myfold = newfold; os.chdir(myfold) 
 			myfile = '{None}' ;	myext = '{None}' 
 			#self.window.set_title(version + '			Folder: ' + myfold)	
-			makeviewlist(self) ; showImage(self)
+			self.radiobutton3D.set_active(True)
+			makeviewlist(self); viewind = 0#~#
+			showImage(self)
 		
 	def menuitemSet(self, menuitem):
-		global myfold, myfile, myext, scope, pairlist, view
+		global myfold, myfile, myext, scope, pairlist, view, viewind#~
 		#local okfold
 		pairlist = []; self.buttonProcess.set_label('Queue')	
 		scope = 'Set'; view = 'All'
 
-		filechooser = Gtk.FileChooserNative.new(title="Select any file from a set of images", parent = self.window, action=Gtk.FileChooserAction.OPEN)
+		filechooser = Gtk.FileChooserNative.new(title="Select any file from a set of images", parent = self.window, action = Gtk.FileChooserAction.OPEN)
 		
 		fileFilter = Gtk.FileFilter()
 		fileFilter.add_pattern('*.jpg')	; fileFilter.add_pattern('*.JPG')
@@ -717,7 +723,9 @@ class GUI:
 								
 		if okfile == True:
 			os.chdir(newfold)
-			makeviewlist(self) ; showImage(self)
+			viewind = 0#~
+			makeviewlist(self)
+			showImage(self)
 		else:
 			if newfile != '{None}':
 				showMessage(self, 'warn', 'Filename must follow rules in Help on File Selection.')
@@ -773,42 +781,42 @@ class GUI:
 			findMatch(); showImage(self)
 			
 	def radiobuttontoggledAnaglyph(self, radiobutton):
-		global formatcode, pairlist
+		global formatcode, pairlist, viewind#~
 		if radiobutton.get_active():
 			formatcode = 'A'			
 			pairlist = []; self.buttonProcess.set_label('Queue')	
-			makeviewlist(self); showImage(self)
+			makeviewlist(self);	showImage(self)
 						
 	def radiobuttontoggledSidebyside(self, radiobutton):
-		global formatcode, pairlist
+		global formatcode, pairlist, viewind#~
 		if radiobutton.get_active():
 			formatcode = 'S'
 			pairlist = []; self.buttonProcess.set_label('Queue')	
-			makeviewlist(self); showImage(self)
-				
+			makeviewlist(self);	showImage(self)
+							
 	def radiobuttontoggledCrossover(self, radiobutton):
-		global formatcode, pairlist
+		global formatcode, pairlist, viewind#~
 		if radiobutton.get_active():
 			formatcode = 'C'
 			pairlist = []; self.buttonProcess.set_label('Queue')	
-			makeviewlist(self); showImage(self)
+			makeviewlist(self);	showImage(self)
 
 	def radiobuttontoggledNormal(self, radiobutton):
-		global stylecode, pairlist
+		global stylecode, pairlist, viewind#~
 		if radiobutton.get_active():
 			stylecode = 'N'
 			pairlist = []; self.buttonProcess.set_label('Queue')	
-			makeviewlist(self); showImage(self)
+			makeviewlist(self);	showImage(self)
 		
 	def radiobuttontoggledPopout(self, radiobutton):
-		global stylecode, pairlist
+		global stylecode, pairlist, viewind#~
 		if radiobutton.get_active():
 			stylecode = 'P'
 			pairlist = []; self.buttonProcess.set_label('Queue')	
-			makeviewlist(self); showImage(self)
+			makeviewlist(self);	showImage(self)
 		
 	def buttonProcess(self, button):
-		global warnings, view, pairlist, viewtext #viewtext 154
+		global warnings, view, pairlist, viewtext, viewind#~ #viewtext 154
 		# local okleft, okright
 		# pairlist filename style is name less last digit (no 3D at start)		
 		warnings = ''
@@ -820,7 +828,6 @@ class GUI:
 					newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
 					if len(newfile) > 1:
 						if (newext in okext
-						 and newfile[-1] in okchar 
 						 and [newfile[:-1], formatcode, stylecode, newext] not in firstlist):
 							firstlist.append([newfile[:-1], formatcode, stylecode, newext])
 
@@ -845,7 +852,6 @@ class GUI:
 				showMessage(self,	'warn', 'Nothing to process.')			
 
 		else: #list not empty so process them
-			self.image1.clear(); self.labelImage1.set_text('')
 
 			warnings = ''
 			for i in pairlist: # open images and get image type and size
@@ -884,9 +890,9 @@ class GUI:
 				showMessage(self, 'warn', warnings)
 
 			pairlist = []; self.buttonProcess.set_label('Queue')	
-			view = '3D';  makeviewlist(self); showImage(self)
-			self.buttonProcess.set_label('Queue')
-			
+			self.radiobutton3D.set_active(True)
+			view = '3D'; makeviewlist(self); viewind = -1; showImage(self)
+
 	def buttonBack(self, menuitem):
 		global firstpress
 		findNext('<')		
@@ -929,6 +935,7 @@ class GUI:
 			showMessage(self, 'warn', 'No 3D images to delete.')							
 
 	def __init__(self):
+		global viewind#~
 		self.glade = datafold+gladefile
 
 		self.builder = Gtk.Builder()
