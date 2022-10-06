@@ -21,7 +21,7 @@ configure_file(
 data_files = [
   'popout3d.glade',
   'popout3d.png',                       #for Glade  
-  'com.github.PopoutApps.popout3d.png', #maybe desktop
+  'com.github.PopoutApps.popout3d.png', #maybe desktop icon
   'dummy.png'                           #V1.5.3
 ]
 

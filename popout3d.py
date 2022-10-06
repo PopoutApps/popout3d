@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-
+# not showing first on in set/2D
 '''
 --------------------------------------------------------------------------------
 Popout3D Stereo Image Creation
@@ -45,19 +45,20 @@ from gi.repository import Gtk, GdkPixbuf, Gdk #Gdk for colour button RGB
 # create global variables and set default values
 version = 'Popout3D V1.5.3'
 firstrun = True
-firstpress = True							# whether this is firstpress of '<' or '>'
+firstimage = True							# whether this is firstimage
 
-view = 'All'
+view = 'All'									# which sort of images to show
 viewlist = []									# list of images to view
 viewind = 0										# index of image to view
 viewtext = ''
 
-dummyfile = 'dummy.png'       # blank image to display when one is missing.
+dummyfile = 'dummy.png'       # grey image to display when one is missing.
+blankfile = 'blank.png'       # blank image to display for clearing.
 gladefile = 'popout3d.glade'
 preffile = 'popout3d.dat'			# user preference file
 myfile = '{None}'							# current file
 myext = '{None}'							# current extension
-#myfold set later
+# myfold mustn't be defined
 scope = 'Folder'
 
 formatcode = 'A'							# first letter of format
@@ -69,9 +70,9 @@ okchar = ['0','1','2','3','4','5','6','7','8','9','L','R'] #last char in 2D file
 okext	= ['jpg','JPG','jpeg','JPEG','png','PNG','tif','TIF','tiff','TIFF']
 okformat = ['A','S','C']			# Anaglyph/Side-by-Side/Crossover
 okstyle	= ['N','P'] 					# Normal/Popout
-
+ 
 '''
-Added by exalm:
+Added by 'exalm':
 	$XDG_DATA_HOME defines the base directory relative to which user specific data files should be stored. 
 	If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used.
 	Done.
@@ -104,7 +105,7 @@ if configfold != None:
 else:
 	configfold = os.getenv('HOME') + '/.config/popout3d/'
 
-#-----project folder for Glade file	
+#-----project folder for Glade file, dummy and blank images
 package = ''
 if os.path.exists('/.flatpak-info'): 
 	datafold = '/app/share/popout3d/'
@@ -115,8 +116,10 @@ elif package == 'debian':
 	else:
 		datafold = os.getenv('HOME') + '/.config/popout3d/'
 		#datafold = '/usr/share/popout3d/' #1.5.3
-else: # no package
-	datafold = ''
+else: # no package for testing
+	datafold = '/home/chris/git/popout3d/'
+
+#print(os.getcwd())
 
 #-------------------------------------------------------------------------------		
 def getpreferences():
@@ -242,20 +245,29 @@ def showMessage(self, which, message):
 
 #===============================================================================		 
 def exif(newfilename, newext, processing):
+	'''
+	Open file, get tags, if processing turn and save the image.
+	Returns orientation, except 'notfound' if file missing and 'tagerror' if exif flags not available.
+	'''
+
 	global pixbuf, error
-	# local orientation
-	orientation = -1
+	# local orientationTag
 	
+	orientationTag = 'None'
 	if os.path.isfile(myfold+newfilename+'.'+newext):
-		image = Image.open(myfold+newfilename+'.'+newext)
+		try:
+			image = Image.open(myfold+newfilename+'.'+newext)
+		except:
+			return 'notfound'
 	else:		
-		return -2
+		return 'notfound'
 	
 	try:
 		image_exif = image.getexif()
 	except AssertionError as error:
 		print('image.exif() error: ', error)
-		return -1
+		image.close
+		return 'tagerror'
 
 	for tag_id in image_exif:
 		tag=TAGS.get(tag_id,tag_id)
@@ -264,25 +276,21 @@ def exif(newfilename, newext, processing):
 			try:
 				data=data.decode()
 			except:
-				continue	
+				image.close
+				return 'tagerror'	
 		#print(f"{tag:20}:{data}")
 		if tag == 'Orientation':
-			orientation = data
-		
+			orientationTag = str(data)
+
 	# save rotated file for processing
 	if processing:
-		if orientation in [3, 6, 8]: #rotate image	
+		if orientationTag in ['3', '6', '8']: #rotate image	
 			image = ImageOps.exif_transpose(image)
 			image.save(workfold+newfilename+'.'+newext, quality=95, subsampling='4:4:4')
-			image.close
-			return orientation
-		else:
-			image.close
-			return -1
-	else: # for showImage
-		image.close
-		return orientation
-	
+
+	image.close
+	return orientationTag
+
 #===============================================================================
 def findMatch():
 	global viewind # local searchlength, char1, char2, charN, viewindL, viewindR, viewindN
@@ -335,108 +343,108 @@ def findMatch():
 				viewind = viewindN
 			else:
 				viewind = -1
-	'''
-	if len(viewlist) > 0:
-		if viewind > len(viewlist) -1:
-			print('List indicator too big', len(viewlist), viewind)
-		elif viewind < 0:
-			print('List indicator negative', len(viewlist), viewind)
-			#viewind = -1	
-	'''
 			
 #===============================================================================
 def findNext(direction):
 	global viewind
-	#local showit
+	#local found
 
-	tryviewind = viewind; showit = False
+	newviewind = viewind
 	if direction == '>':
-		tryviewind = tryviewind +1
+		newviewind = newviewind +1
 	else:
-		tryviewind = tryviewind -1
- 			
-	while showit == False and len(viewlist) > 0 and tryviewind > -1 and tryviewind < len(viewlist): 
-		if (view in ('All', '3D', 'Triptych') and viewlist[tryviewind][2] == '3D') or (view in ('All', '2D') and viewlist[tryviewind][2] == '2D'):
-			showit = True	
-			viewind = tryviewind
-		elif direction == '>':
-			tryviewind = tryviewind +1
-		else:
-			tryviewind = tryviewind -1
+		newviewind = newviewind -1
 
+	found = False
+	while found == False and len(viewlist) > 0 and newviewind > -1 and newviewind < len(viewlist): 
+		if (view in ('All', '3D', 'Triptych') and viewlist[newviewind][2] == '3D') or (view in ('All', '2D') and viewlist[newviewind][2] == '2D'):
+			found = True	
+			viewind = newviewind
+			return
+		elif direction == '>':
+			newviewind = newviewind +1
+		else:
+			newviewind = newviewind -1
+
+	# a further image wasn't found, leave viewind as it is.
+		
 #===============================================================================
 def showImage(self):
-	global viewind, firstpress
-	
-	self.image1.clear(); self.imageL.clear(); self.imageR.clear()
+
+	#local newfilename1, newfilenameL, newfilenameR, newext1, newextL, newextR
 	self.labelImage1.set_text(''); self.labelImageL.set_text(''); self.labelImageR.set_text('')
+	self.image1.clear(); self.imageL.clear(); self.imageR.clear()
+	
+	allocation = self.window.get_allocation()
+	width = int(allocation.width*7/10); height = int(allocation.height*8/10)
 
-	# valid image
-	if len(viewlist) > 0 and viewind > -1 and not firstpress:
-		# select currently indicated image from viewlist			
-		newfilename = viewlist[viewind][0]; newext = viewlist[viewind][1]
-		allocation = self.window.get_allocation()
-		width = int(allocation.width*7/10); height = int(allocation.height*8/10)
-
-		orientation = exif(newfilename, newext, False)
-		if orientation == 3: # upside down, so rotate 180 clockwise
-			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, width, height, True), 180)
-		elif orientation == 6: # top at right so rotate 270 clockwise
-			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, height, width, True), 270)
-		elif orientation == 8: #top pointing left so rotate 90 clockwise
-			GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, height, width, True), 90)
-		elif orientation == -2:
-			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+dummyfile+'.'+newext, width, height, True)		
-		else: #already upright
-			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename+'.'+newext, width, height, True)
-
+	# valid image 
+	if not firstimage and len(viewlist) > 0 and viewind > -1 and (
+																																(view in ('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
+																																or
+																																(view in ('All', '2D') and viewlist[viewind][2] == '2D')
+																																):
+					
 		# two 2D images for triptych	
 		if view == 'Triptych':
 			width = int(width/2) ; height = int(height/2)
+
 			# Left 2D image
-			newfilenameL = viewlist[viewind][0][:-4]+viewlist[viewind][0][-4]; newextL = viewlist[viewind][1] 
-			orientationL = exif(newfilenameL, newextL, False)
-
-			if orientationL == 3: # upside down, so rotate 180 clockwise
-				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True), 180)
-			elif orientationL == 6: # top at right so rotate 270 clockwise
-				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, height, width, True), 270)
-			elif orientationL == 8: #top pointing left so rotate 90 clockwise
-				GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, height, width, True), 90)
-			elif orientation == -2:
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+dummyfile+'.'+newext, width, height, True)
-			else: #already upright
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True)
-
-			self.imageL.set_from_pixbuf(pixbuf)
+			newfilenameL = viewlist[viewind][0][:-4]+viewlist[viewind][0][-4]; newextL = viewlist[viewind][1]
 			self.labelImageL.set_text(newfilenameL+'.'+newextL)
+
+			orientationL = exif(newfilenameL, newextL, False)
+			if orientationL == '3': # upside down, so rotate 180 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True), 180)
+			elif orientationL == '6': # top at right so rotate 270 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, height, width, True), 270)
+			elif orientationL == '8': #top pointing left so rotate 90 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, height, width, True), 90)
+			elif orientationL == 'notfound':
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(datafold+dummyfile, width, height, True)
+			else:
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameL+'.'+newextL, width, height, True)
+			self.imageL.set_from_pixbuf(pixbuf)
 
 			# Right 2D image
 			newfilenameR = viewlist[viewind][0][:-4]+viewlist[viewind][0][-3]; newextR = viewlist[viewind][1]
-			orientationR = exif(newfilenameR, newextR, False)
-
-			if orientationR == 3: # upside down, so rotate 180 clockwise
-				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True), 180)
-			elif orientationR == 6: # top at right so rotate 270 clockwise
-				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, height, width, True), 270)
-			elif orientationR == 8: #top pointing left so rotate 90 clockwise
-				GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, height, width, True), 90)
-			elif orientation == -2:
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(workfold+dummyfile+'.'+newext, width, height, True)
-			else: #already upright
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True)
-
-			self.imageR.set_from_pixbuf(pixbuf)
 			self.labelImageR.set_text(newfilenameR+'.'+newextR)
 
+			orientationR = exif(newfilenameR, newextR, False)
+			if orientationR == '3': # upside down, so rotate 180 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True), 180)
+			elif orientationR == '6': # top at right so rotate 270 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, height, width, True), 270)
+			elif orientationR == '8': #top pointing left so rotate 90 clockwise
+				pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, height, width, True), 90)
+			elif orientationR == 'notfound':
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(datafold+dummyfile, width, height, True)
+			else:
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilenameR+'.'+newextR, width, height, True)
+			self.imageR.set_from_pixbuf(pixbuf)
+
 		# image 1 must be last so it doesn't take all the space in a Triptych
+		# select currently indicated image from viewlist			
+		newfilename1 = viewlist[viewind][0]; newext1 = viewlist[viewind][1]
+		self.labelImage1.set_text(newfilename1+'.'+newext1)
+		
+		orientation1 = exif(newfilename1, newext1, False)
+		if orientation1 == '3': # upside down, so rotate 180 clockwise
+			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename1+'.'+newext1, width, height, True), 180)
+		elif orientation1 == '6': # top at right so rotate 270 clockwise
+			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename1+'.'+newext1, height, width, True), 270)
+		elif orientation1 == '8': #top pointing left so rotate 90 clockwise
+			pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename1+'.'+newext1, height, width, True), 90)
+		elif orientation1 == 'notfound': # file missing
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(datafold+dummyfile, width, height, True)
+		else: #already upright or could not be determined
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename1+'.'+newext1, width, height, True)
+
 		self.image1.set_from_pixbuf(pixbuf)
-		self.labelImage1.set_text(newfilename+'.'+newext)
 
 #===============================================================================
 def makeviewlist(self):
 	global viewlist, viewind, pairlist
-	self.window.set_title('makeviewlist'+str(viewind))
 	#local variables newfile, newext, viewtext
 
 	viewlist = []
@@ -565,9 +573,9 @@ def processPair(self, newfile, leftn, rightn, newformatcode, newstylecode, newex
 	orientationR = exif(newfile+rightn, newext, True)
 
 	# get from workfold if turned
-	if orientationL in (3, 6, 8) or orientationR in (3, 6, 8): #turned
+	if orientationL in ('3', '6', '8') or orientationR in ('3', '6', '8'): #turned
 		infold = workfold
-	else: # not turned -1 or not found -2
+	else: # not turned/no good -1 or not found -2
 		infold = myfold			
 
 	#replace A and P with styleAIS
@@ -664,30 +672,33 @@ class GUI:
 		Gtk.main_quit()
 
 	def menuitemFolder(self, menuitem):
-		global myfold, myfile, myext, scope, pairlist, view, viewind#~
-		pairlist = []; self.buttonProcess.set_label('Queue')	
-		scope = 'Folder'; view = 'All'
+		global myfold, myfile, myext, scope, pairlist, viewind#, firstimage
 			
 		filechooser = Gtk.FileChooserNative.new(title='Select the Folder where the images are', parent = self.window, action=Gtk.FileChooserAction.SELECT_FOLDER)
 		filechooser.set_current_folder(myfold)
 		response = filechooser.run();
 		filechooser.hide()
+
 		if response == Gtk.ResponseType.ACCEPT:	
 			newfold = filechooser.get_filename()
 			newfold = newfold+'/'	
 			myfold = newfold; os.chdir(myfold) 
 			myfile = '{None}' ;	myext = '{None}' 
-			#self.window.set_title(version + '			Folder: ' + myfold)	
-			self.radiobutton3D.set_active(True)
-			makeviewlist(self); viewind = 0#~#
+			pairlist = []; self.buttonProcess.set_label('Queue')	
+			scope = 'Folder'
+			makeviewlist(self); viewind = 0; findNext('<') # firstimage = True
+			if not  (
+							(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
+							or
+							(view in ('All', '2D') and viewlist[viewind][2] == '2D')
+							):
+				findNext('>')
 			showImage(self)
-		
+			
 	def menuitemSet(self, menuitem):
-		global myfold, myfile, myext, scope, pairlist, view, viewind#~
-		#local okfold
-		pairlist = []; self.buttonProcess.set_label('Queue')	
-		scope = 'Set'; view = 'All'
-
+		global myfold, myfile, myext, scope, pairlist, viewind#, firstimage
+		#local okfile
+		
 		filechooser = Gtk.FileChooserNative.new(title="Select any file from a set of images", parent = self.window, action = Gtk.FileChooserAction.OPEN)
 		
 		fileFilter = Gtk.FileFilter()
@@ -704,8 +715,8 @@ class GUI:
 		if response == Gtk.ResponseType.ACCEPT:		
 			newfile = filechooser.get_filename()
 		else: # answered No or closed window
-			newfile = '{None}'	 
-		
+			return #~ newfile = '{None}'
+
 		newfold, newfile = os.path.split(newfile)
 		newfile, newext = os.path.splitext(newfile)				
 
@@ -717,19 +728,25 @@ class GUI:
 				if (newfile[-4] in okchar and newfile[-3] in okchar and newfile[-2] in okformat and newfile[-1] in okstyle):
 					myfold = newfold +'/' ; myfile = newfile[:-4]; myext = newext[1:] 
 				else:
-					okfile = False
+					showMessage(self, 'warn', 'Filename must follow rules in Help on File Selection.')
+					return
 			else:
-				okfile = False
-								
-		if okfile == True:
-			os.chdir(newfold)
-			viewind = 0#~
-			makeviewlist(self)
-			showImage(self)
-		else:
-			if newfile != '{None}':
 				showMessage(self, 'warn', 'Filename must follow rules in Help on File Selection.')
+				return
+								
+		os.chdir(newfold)
+		pairlist = []; self.buttonProcess.set_label('Queue')	
+		scope = 'Set'
 
+		makeviewlist(self); viewind = 0; findNext('<') # firstimage = True
+		if not  (
+						(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
+						or
+						(view in ('All', '2D') and viewlist[viewind][2] == '2D')
+						):
+			findNext('>')
+		showImage(self)
+		
 	def menuitemPreferences(self, menuitem):
 		result = showMessage(self, 'ask', 'This will save your current settings as the defaults.')
 		if result == 'Yes':
@@ -894,16 +911,16 @@ class GUI:
 			view = '3D'; makeviewlist(self); viewind = -1; showImage(self)
 
 	def buttonBack(self, menuitem):
-		global firstpress
+		global firstimage
 		findNext('<')		
-		firstpress = False
+		firstimage = False
 		showImage(self)
 				
 	def buttonForward(self, menuitem):
-		global firstpress
-		if not firstpress: #it's already on first image, this is so it shows first image rather than going to second.
+		global firstimage
+		if not firstimage: #it's already on first image, this is so it shows first image rather than going to second.
 			findNext('>')	
-		firstpress = False
+		firstimage = False
 		showImage(self)		
 				
 	def buttonDelete(self, button): #menuitem
@@ -997,12 +1014,11 @@ class GUI:
 		#=======================================================================		 
 		# set preference variables and set title
 		getpreferences()
+		if scope == 'Folder':
+			self.window.set_title(version + '			Folder: ' + myfold)
+		else:
+			self.window.set_title(version + '			Set: ' + myfold + myfile + '*.' + myext)
 
-		#if scope == 'Set': #~~~
-		#	self.window.set_title(version + '			Set: ' + myfile + '*.' + myext)
-		#else:
-		#	self.window.set_title(version + '			Folder: ' + myfold)
-			 
 		if formatcode == 'S': # Side-by-Side
 			self.radiobuttonSidebyside.set_active(True)
 		elif formatcode == 'C': # Crossover
@@ -1027,7 +1043,10 @@ class GUI:
 		if firstrun:
 			self.result = self.messageFirst.run() ; self.messageFirst.hide()
 
-		makeviewlist(self); showImage(self)
+		makeviewlist(self); viewind = 0; findNext('<')
+		if not (view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D') or (view in ('All', '2D') and viewlist[viewind][2] == '2D'):
+			findNext('>')
+		showImage(self)
 		
 #===============================================================================
 if __name__ == '__main__':	
