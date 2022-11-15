@@ -1,6 +1,6 @@
 project(
   'popout3d',
-  version: '1.5.3',
+  version: '1.5.31',
   meson_version: '>= 0.46.0'
 )
 

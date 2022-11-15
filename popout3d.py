@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-# not showing first on in set/2D
+
 '''
 --------------------------------------------------------------------------------
 Popout3D Stereo Image Creation
@@ -43,7 +43,7 @@ from gi.repository import Gtk, GdkPixbuf, Gdk #Gdk for colour button RGB
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = 'Popout3D V1.5.3'
+version = 'Popout3D V1.5.31'
 firstrun = True
 firstimage = True							# whether this is firstimage
 
@@ -56,8 +56,8 @@ dummyfile = 'dummy.png'       # grey image to display when one is missing.
 blankfile = 'blank.png'       # blank image to display for clearing.
 gladefile = 'popout3d.glade'
 preffile = 'popout3d.dat'			# user preference file
-myfile = '{None}'							# current file
-myext = '{None}'							# current extension
+myfile = '' #1.5.31							# current file
+myext = '' #1.5.31							# current extension
 # myfold mustn't be defined
 scope = 'Folder'
 
@@ -81,12 +81,11 @@ Added by 'exalm':
 	Not done.
 '''
 
-#-----home folder
+# home folder
 homefold = os.getenv('XDG_HOME')
-if homefold != None:
-	homefold = homefold + '/'
-else:
-	homefold = os.getenv('HOME') + '/'
+if homefold == None:
+	homefold = os.getenv('HOME')
+homefold = homefold + '/'
 
 # work folder for processing files
 workfold = homefold + '.popout3d/'
@@ -98,28 +97,23 @@ if result != 0:
 	print('Cannot create work directory')
 	sys.exit(result)
 
-#-----config folder
+# config folder for preference file
 configfold = os.getenv('XDG_CONFIG_HOME')
-if configfold != None:
-	configfold = configfold + '/'
-else:
-	configfold = os.getenv('HOME') + '/.config/popout3d/'
-
-#-----project folder for Glade file, dummy and blank images
-package = ''
-if os.path.exists('/.flatpak-info'): 
+if configfold == None:
+	configfold = os.getenv('HOME') + '/.config/popout3d'
+configfold = configfold + '/'
+	
+# project folder (read-only) for Glade file, dummy image and blank image
+if os.path.exists('/.flatpak-info'): #This is within the sandbox so can't be seen
 	datafold = '/app/share/popout3d/'
-elif package == 'debian':
-	datafold = os.getenv('XDG_DATA_HOME')
-	if datafold != None:
-		datafold = datafold + '/popout3d/'
-	else:
-		datafold = os.getenv('HOME') + '/.config/popout3d/'
-		#datafold = '/usr/share/popout3d/' #1.5.3
 else: # no package for testing
 	datafold = '/home/chris/git/popout3d/'
 
 #print(os.getcwd())
+#print('homefold = ', homefold)
+#print('workfold = ', workfold)
+#print('configfold = ', configfold)
+#print('datafold = ', datafold)
 
 #-------------------------------------------------------------------------------		
 def getpreferences():
@@ -153,13 +147,13 @@ def getpreferences():
 		if os.path.exists(prefdata[1]):
 			myfold = prefdata[1]
 		else:
-			myfold = homefold
+			myfold = homefold #1.5.31
 		
 		myfile = prefdata[2] ; myext = prefdata[3]; scope = 'Set'
 		#153 note this doesn't check the ? character is valid, but it shouldn't be possible
 		# to save an invalid one. Should only occur if preference file was edited
 		if not glob.glob(myfold+'/'+myfile+'?.'+myext): 
-			myfile == '{None}'; myext == '{None}'; scope = 'Folder'
+			myfile == ''; myext == ''; scope = 'Folder' #1.5.31
 		
 		if prefdata[4] in ['A', 'S', 'C']: # Anaglyph/Side-by-Side/Crossover
 			formatcode = prefdata[4]
@@ -176,40 +170,16 @@ def getpreferences():
 		else:
 			view = 'All'
 
-		#153 prefdata[7] was for firstrun
-		'''153 prefdata(8) was for colour and brightness balance
-		okcol = True
-		x = [0, 0]		 
-		for i in range (0, 2):
-			try:
-				x[i] = int(prefdata[8].split(' ')[i])
-			except:
-				okcol = False
-
-		if okcol:		 
-			if x[0] >= -100 and x[0] <= 100:
-				preferenceBright = x[0]
-			else:	 
-				preferenceBright = 0
-			if x[1] >= -100 and x[1] <= 100:
-				preferenceBal = x[1]					
-			else:
-				preferenceBright = 0
-				
-		choiceBright = preferenceBright; choiceBal = preferenceBal	
-		'''
-
 	if okpref:
  		firstrun = False
 	else: # defaults
 		#version
-		myfold = '{None}'
-		myfile = '{None}'
-		myext = '{None}'
+		myfold = homefold #1.5.31
+		myfile = '' #1.5.31
+		myext = '' #1.5.31
 		formatcode = 'A'
 		stylecode = 'N'
 		view = 'All'
-		#153 preferenceBright = 0; preferenceBal = 0
 
 	# write pref file anyway in case mydir/myfile have been deleted or any other problem
 	with open(configfold + preffile, 'w') as fn:			
@@ -220,10 +190,6 @@ def getpreferences():
 		fn.write(formatcode+'\n')
 		fn.write(stylecode+'\n')
 		fn.write(view+'\n')
-		#152 fn.write('No\n')
-		#153 fn.write(str(preferenceBright)+' '+str(preferenceBal)+'\n')
-
-	#153 choiceBright = preferenceBright; choiceBal = preferenceBal
 
 #===============================================================================
 def showMessage(self, which, message):
@@ -509,7 +475,7 @@ def makeviewlist(self):
 					and i[0][-2] in okformat and i[0][-1] in okstyle):
 						viewtext = viewtext+i[0]+'.'+i[1]+'\n'
 	else:
-		viewtext = '{None}'
+		viewtext = '' #1.5.31
 
 	self.labelViewing.set_text(viewtext)
 	self.image1.clear() ; self.labelImage1.set_text('') 
@@ -683,16 +649,17 @@ class GUI:
 			newfold = filechooser.get_filename()
 			newfold = newfold+'/'	
 			myfold = newfold; os.chdir(myfold) 
-			myfile = '{None}' ;	myext = '{None}' 
+			myfile = ''; myext = '' #1.5.31 
 			pairlist = []; self.buttonProcess.set_label('Queue')	
 			scope = 'Folder'
 			makeviewlist(self); viewind = 0; findNext('<') # firstimage = True
-			if not  (
-							(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
-							or
-							(view in ('All', '2D') and viewlist[viewind][2] == '2D')
-							):
-				findNext('>')
+			if len(viewlist) > 0: #1.5.31
+				if not  (
+								(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
+								or
+								(view in ('All', '2D') and viewlist[viewind][2] == '2D')
+								):
+					findNext('>')
 			showImage(self)
 			
 	def menuitemSet(self, menuitem):
@@ -715,7 +682,7 @@ class GUI:
 		if response == Gtk.ResponseType.ACCEPT:		
 			newfile = filechooser.get_filename()
 		else: # answered No or closed window
-			return #~ newfile = '{None}'
+			return #~ newfile = '' #1.5.31
 
 		newfold, newfile = os.path.split(newfile)
 		newfile, newext = os.path.splitext(newfile)				
@@ -739,12 +706,13 @@ class GUI:
 		scope = 'Set'
 
 		makeviewlist(self); viewind = 0; findNext('<') # firstimage = True
-		if not  (
-						(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
-						or
-						(view in ('All', '2D') and viewlist[viewind][2] == '2D')
-						):
-			findNext('>')
+		if len(viewlist) > 0: #1.5.31
+			if not  (
+							(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
+							or
+							(view in ('All', '2D') and viewlist[viewind][2] == '2D')
+							):
+				findNext('>')
 		showImage(self)
 		
 	def menuitemPreferences(self, menuitem):
@@ -849,7 +817,8 @@ class GUI:
 							firstlist.append([newfile[:-1], formatcode, stylecode, newext])
 
 			elif scope == 'Set': #store one filename for the set in firstlist
-				if (myfile != '{None}' and myext != '{None}'
+				#1.5.31 myfile myext
+				if (myfile != '' and myext != ''
 				 and [myfile, formatcode, stylecode, myext] not in firstlist): #135
 					firstlist.append([myfile, formatcode, stylecode, myext])
 
@@ -1044,8 +1013,13 @@ class GUI:
 			self.result = self.messageFirst.run() ; self.messageFirst.hide()
 
 		makeviewlist(self); viewind = 0; findNext('<')
-		if not (view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D') or (view in ('All', '2D') and viewlist[viewind][2] == '2D'):
-			findNext('>')
+		if len(viewlist) > 0: #1.5.31
+			if not  (
+							(view in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
+							or
+							(view in ('All', '2D') and viewlist[viewind][2] == '2D')
+							):
+				findNext('>')
 		showImage(self)
 		
 #===============================================================================

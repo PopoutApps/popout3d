@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 
+<!-- Generated with glade 3.40.0 
 
 Copyright (C) 
 
@@ -1094,7 +1094,7 @@ If a 3D image is being displayed you may delete it. To ensure that you don't los
     <property name="gravity">center</property>
     <property name="transient-for">window</property>
     <property name="program-name">Popout3D</property>
-    <property name="version">Version 1.5.3</property>
+    <property name="version">Version 1.5.30</property>
     <property name="website-label" translatable="yes">Create a 3D image from photographs taken with an ordinary camera.</property>
     <property name="license" translatable="yes">This program comes with absolutely no warranty.
 See the &lt;a href="http://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public Licence, version 3 or later&lt;/a&gt; for details.</property>
