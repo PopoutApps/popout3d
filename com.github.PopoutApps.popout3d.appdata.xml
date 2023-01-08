@@ -8,15 +8,13 @@
   <summary>Creates 3D images from photographs taken with an ordinary camera.</summary>
   <content_rating type="oars-1.0" />
   <releases>
-    <release date="2022-11-15" version="1.5.31" />
+    <release date="2023-01-09" version="1.5.4" />
   </releases>
   <description>
     <p>
       Creates 3D images from photographs taken with an ordinary camera.  Take a set of photos of a subject and the software will create a 3D image from  each pair of photos in the set, so that you can choose the best. Formats that can be created are anaglyph (red/cyan),  side-by-side and crossover. Several sets of photos can be processed at once,  they can be previewed and poor ones can be deleted.   Vertical and  rotational alignment of the left and right images is essential for a convincing 3D effect, but difficult to achieve with an ordinary camera. This software corrects it.    
     </p>
-
-  </description>
-  
+  </description> 
   <launchable type="desktop-id">com.github.PopoutApps.popout3d.desktop</launchable>
   <screenshots>
     <screenshot type="default">

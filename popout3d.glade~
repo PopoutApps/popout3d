@@ -256,7 +256,7 @@ To process all the image sets in a directory, first use File&gt;Directory to cho
                 <property name="margin-top">5</property>
                 <property name="label" translatable="yes">Click Queue to see what 3D images will be created, if there are too many or they are not what you want, make a different selection with File&gt;Set or File&gt;Folder.
 
-When processing starts the button will change to Reset, the view will change to 3D and only images which are in the queue will be shown. Unfinished ones will show as grey rectangles and you can check for completed ones with &lt; and &gt;. If you press Reset or select a new Folder or Set you will reset the list to showing all the images in your Folder or Set selection.
+When processing starts the button will change to Reset, the view will change to 3D and only images which are in the queue will be shown. Unfinished ones will show as grey rectangles and you can check for completed ones with &lt; and &gt;. You can select All/2D/3D/Triptych without losing this list. If you press Reset or change anything else you will reset the list to showing all the images in your File/Folder selection.
 
 An existing 3D image file will not be overwritten, so if you create a 3D file from a pair of images, then for some reason want to create a new 3D image from them, you will need to move, rename or delete the existing 3D image file first. 
 
