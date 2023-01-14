@@ -143,6 +143,7 @@ def getpreferences():
 			for i in range(0, 7):
 				prefdata[i] = infile.readline()
 				prefdata[i] = prefdata[i][:-1] # remove linefeed
+			infile.close()	
 	except:
 		okpref = False
 
@@ -197,6 +198,7 @@ def getpreferences():
 		fn.write(formatcode+'\n')
 		fn.write(stylecode+'\n')
 		fn.write(view+'\n')
+		fn.close()
 
 #===============================================================================
 def checklist(self): #32XX
@@ -591,24 +593,20 @@ def makepairlist(self, newfile, newformatcode, newstylecode, newext):
 
 #===============================================================================
 def processPairlist(pairlist):
-	global warnings
+	#global warnings
+	#local tagL, tagR, foldL, foldR
 	
 	with open(workfold + blockfile, 'w') as fn:			
 		fn.write('BLOCK'+'\n')
+		fn.close()
 
 	for record in pairlist:
 		if os.path.isfile(workfold+stopfile):
 			break
 			
-		#processPair(record[0],record[1],record[2],record[3],record[4],record[5],record[6],record[7]) #32XX	
 		newfile = record[0]; leftn = record[1]; rightn = record[2]; newformatcode = record[3]; newstylecode = record[4]; newext = record[5]; tagL = record[6]; tagR = record[7]
-		#def processPair(newfile, leftn, rightn, newformatcode, newstylecode, newext, tagL, tagR):
-
-		#global warnings
-		#local tagL, tagR, foldL, foldR
 		
 		# make filenames then call align_image_stack
-		#153 fileout	 = newfile+leftn+rightn+formatcode+stylecode+'.'+newext
 		fileout	= newfile+leftn+rightn+newformatcode+newstylecode+'.'+newext
 		fileleft	= newfile+leftn+'.'+newext
 		fileright = newfile+rightn+'.'+newext
@@ -616,14 +614,24 @@ def processPairlist(pairlist):
 		# turn image if needed and put into workfold
 		foldL = foldR = myfold	
 		if tagL in ['3', '6', '8']: #32XXX rotate image	
-			image = ImageOps.exif_transpose(image)
-			image.save(workfold+newfilename+'.'+newext, quality=95, subsampling='4:4:4')
-			foldL = workfold
+			if os.path.isfile(myfold+fileleft):
+				try:
+					image = Image.open(myfold+fileleft)
+					image = ImageOps.exif_transpose(image)
+					image.save(workfold+fileleft, quality=95, subsampling='4:4:4')
+					foldL = workfold
+				except:
+					pass	
 
 		if tagR in ['3', '6', '8']: #32XXX rotate image	
-			image = ImageOps.exif_transpose(image)
-			image.save(workfold+newfilename+'.'+newext, quality=95, subsampling='4:4:4')
-			foldR = workfold	
+			if os.path.isfile(myfold+fileright):
+				try:
+					image = Image.open(myfold+fileright)
+					image = ImageOps.exif_transpose(image)
+					image.save(workfold+fileright, quality=95, subsampling='4:4:4')
+					foldR = workfold	
+				except:
+					pass	
 		
 		#replace A and P with styleAIS
 		if stylecode == 'N':		
@@ -631,15 +639,15 @@ def processPairlist(pairlist):
 		else:
 			styleAIS = 'P'
 
-		command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i --use-given-order -"'+styleAIS+'" -C "'+foldR+fileright+'" "'+foldL+fileleft+'"' #-v {verbose}
-			#command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+workfold+'right.'+newext+'" "'+workfold+'left.'+newext+'"' 
+		#command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+workfold+'right.'+newext+'" "'+workfold+'left.'+newext+'"' 
+		#command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i --use-given-order -"'+styleAIS+'" -C "'+foldR+fileright+'" "'+foldL+fileleft+'"' #-v {verbose}
+		command	 = 'align_image_stack -a "'+workfold+fileout+'" -"'+styleAIS+'" -C "'+foldR+fileright+'" "'+foldL+fileleft+'"' #-v {verbose} #-i favour centre of images
 
 		args = shlex.split(command) 
-		print ('Aligning ', workfold+fileout) # For checking which files cause the problem
-		result = subprocess.run(args) # this is no longer spawned
-		result = str(result)[str(result).find("returncode")+11] # Output of command is CompletedProcess(args='?', returncode=0)
-		result = int(result)
-
+		
+		print('Aligning ', workfold+fileout) # For checking which files cause the problem
+		result = os.system(command)
+ 		
 		# remove turned images if they exist
 		if os.path.isfile(workfold+fileleft):
 			os.remove(workfold+fileleft)
@@ -649,7 +657,6 @@ def processPairlist(pairlist):
 		# align_image_stack has worked
 		if result == 0: 
 			# load left and right images
-
 			image_left = Image.open(workfold+fileout+'0001.tif')
 			image_right = Image.open(workfold+fileout+'0000.tif')
 	
@@ -691,8 +698,8 @@ def processPairlist(pairlist):
 			if os.path.isfile(workfold+fileout+'0000.tif'):
 				os.remove(workfold+fileout+'0000.tif') 
 		else:
-			warnings = warnings + 'It was not possible to align '+fileout+'.\n'
-
+			pass# warnings = warnings + 'It was not possible to align '+fileout+'.\n'
+		
 	if os.path.isfile(workfold+blockfile):
 			os.remove(workfold+blockfile)
 
@@ -702,13 +709,13 @@ def processPairlist(pairlist):
 class GUI:
 
 	def on_window1_destroy(self, object): # close window with 0 or X
-		with open(workfold + stopfile, 'w') as fn:			
-			fn.write('STOP'+'\n')
+		with open(workfold+stopfile, 'w') as fn:			
+			fn.write('STOP'+'\n'); fn.close()
 		Gtk.main_quit()
 
 	def menuitemQuit(self, menuitem): # quit with File > Quit
-		with open(workfold + stopfile, 'w') as fn:			
-			fn.write('STOP'+'\n')
+		with open(workfold+stopfile, 'w') as fn:			
+			fn.write('STOP'+'\n'); fn.close()
 		Gtk.main_quit()
 
 	def menuitemFolder(self, menuitem):
@@ -807,8 +814,7 @@ class GUI:
 					fn.write(formatcode+'\n')
 					fn.write(stylecode+'\n')
 					fn.write(view+'\n')
-					#153fn.write(str(choiceBright)+' '+str(choiceBal)+'\n')
-					#153preferenceBright = choiceBright; preferenceBal = choiceBal
+					fn.close()
 				except:
 					print('Failed to write preference file.')
 			
@@ -895,7 +901,7 @@ class GUI:
 
 		# DO  NOTHING
 		# Still processing - do nothing
-		if os.path.isfile(workfold+blockfile) and not resettable:
+		if os.path.isfile(workfold+blockfile):
 			showMessage(self,	'warn', 'Please wait for the current processing to finish.')
 
 		# RESET
@@ -947,7 +953,8 @@ class GUI:
 				
 				self.labelViewing.set_text(viewtext)		
 				self.buttonProcess.set_label('Process')		
-
+				self.radiobutton3D.set_active(True) #~
+				
 			else: # empty list - warn nothing to process
 				makeviewlist(self); makeviewlabel(self); makeviewtext(self); showImage(self) #32XXXX			
 				showMessage(self,	'warn', 'Nothing to process.')
@@ -956,6 +963,8 @@ class GUI:
 		else: # list not empty so process
 			multi = multiprocessing.Process(target = processPairlist, args=(pairlist,))				
 			multi.start()
+			
+			#processPairlist(pairlist)
 					
 			pairlist = []
 			self.buttonProcess.set_label('Reset'); resettable = True	
