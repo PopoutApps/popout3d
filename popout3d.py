@@ -138,13 +138,15 @@ else: # no package for testing
 #('configfold = ', configfold)
 #('datafold = ', datafold)
 
-label0text = '''
+# Basics
+label0text = ''' 
 Take two photos of a stationary subject, preferably in landscape format. Take the first, then move the camera about 60mm to the right, but point it at the same spot. Copy them to your PC, then rename them so that they have exactly the same name except that the left one has 'L' at the end and the right one has 'R'. For example photoL.JPG and photoR.JPG.
 
 Open Popout3D then use Open>File to select either photo. Click Queue to see what 3D images will be created, the button will change to Process. Click it to begin processing. The button will change to Reset. If you use the < and > arrows you see a grey rectangle until the 3D image is complete when it will appear. It will take several seconds.
 
 You will need 3D glasses to see anaglyph images or 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without them.
 '''
+# Source Photographs
 label1text = '''
 You don't need a special camera, you can use an ordinary one or even a phone. Choose a subject that won't move between photos.
 
@@ -161,40 +163,27 @@ DSCN0365.JPG - rightmost image
 If you only took 2 you could end them with L and R.
 Note that the Popout3D only lists and displays files with valid names.
 
-Subjects
-    Movement
+Movement
 Stationary objects like buildings or scenery give good results.
 
 Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may be work in the right circumstances, for example if there isn't too much wind, and the water is placid.
 
 Moving vehicles or people, or fast-flowing water like a waterfall or waves won't work.
 
-    Quality of Effect
+Quality of Effect
 A picture with objects at varying distances results in a convincing effect. Distant scenery won't work well, as there is little perspective effect anyway.
 
 Some images are too difficult for the aligning software, and the resulting image is unusable.
+
+Notes
+Images must have exactly the same width and height in pixels. This makes editing the original L and R images difficult, but it can be done with a photo editor like rawTherapee which shows you the size that the edited image will have so you can match them. It is easier to edit the 3D image, although you can't crop Side-By-Side or Crossover ones.
+
+Avoid images with all red or all cyan objects as they only appear in one eye so look weird.
+
+Strange effects from nearby objects might be caused by the camera's depth of field being high. A shorter exposure will reduce the depth of field.
 '''
+# File Selection
 label2text = '''
-The format of the 3D image to be created may be:
-
-Anaglyph
-A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
-
-Side-by-side
-A side-by-side 3D image viewed straight ahead. Left hand image on the left, right hand on the right. Some people can see these without a viewer, some can't.
-
-Crossover
-A side-by-side 3D image viewed with eyes crossed. Right hand image on the left, left hand on the right. Some people can see these without a viewer, some can't.
-
-There are two styles available:
-
-Normal
-A normal 3D image with the front of the picture level with the screen.
-
-Popout
-A 'popout' image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".
-'''
-label3text = '''
 File
 To process a single set of images which are all for the same subject, first use Open>File to choose any file from the set.
 
@@ -218,27 +207,50 @@ With images ending in L and R you would get sceneryLRAN.jpg.
 Folder:
 To process all the image sets in a folder, first use Open>folder to choose the folder with the sets of images.
 '''
+
+# 3D Image Options
+label3text = '''
+The format of the 3D image to be created may be:
+
+Anaglyph
+A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
+
+Side-by-side
+A side-by-side 3D image viewed straight ahead. Left hand image on the left, right hand on the right. Some people can see these without a viewer, some can't.
+
+Crossover
+A side-by-side 3D image viewed with eyes crossed. Right hand image on the left, left hand on the right. Some people can see these without a viewer, some can't.
+
+There are two styles available:
+
+Normal
+A normal 3D image with the front of the picture level with the screen.
+
+Popout
+A 'popout' image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".
+'''
+# Processing
 label4text = '''
-To start processing the selected images, click on "Queue", this will show a list of the images to be created in the panel to the left and the button will change to "Process". 
-
 For the 3D effect to work it is essential that each pair of images is prefectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
-
-Mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
 
 Note that an existing 3D image file will not be overwritten, so if you create a 3D file from a pair of images, then for some reason want to create a new 3D image from them, you will need to move, rename or delete the existing 3D image file first.
 
+To start processing the selected images, click on "Queue", this will show a list of the images to be created in the panel to the left and the button will change to "Process". If you are happy with this list, press "Process", the button will change to "Reset". You can use the < and > buttons to look for completed 3D images. Only the recently processed images are shown. When you have finished checking them, press "Reset" to go back to the Files or Folder that you selected earlier, the new images will still show. 
+
 Notes
-Images must have exactly the same width and height in pixels. This makes editing the original L and R images difficult, but it can be done with a photo editor like rawTherapee which shows you the size that the edited image will have so you can match them. It is easier to edit the 3D image, although you can't crop it.
-Portrait images from a phone may be landscape photos with a rotation tag, the program rotates them to portrait before processing. It doesn't change the originals.
+Portrait images from a phone may be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
+
+Mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
+
 The 3D images won't have valid EXIF tags.
-Avoid images with all red or all cyan objects as they only appear in one eye so look weird.
-You may need to view 3D images from further away than you might expect.
-Strange effects from nearby objects might be caused by the camera's depth of field being high. A shorter exposure will reduce the depth of field.
-Note that preferences from previous program versions are not loaded.
+
+Preferences from previous versions of the program are not loaded.
+
 If you can't remember which of a pair of images was left and which was right, create a 3D image as usual. If it doesn't look right with your anaglyph glasses on normally, try with them on upside down, so the lenses swap sides. If the image now works you had the images the wrong way round - just rename them and create a new 3D image.
 
 You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.
 '''
+# View
 label5text = '''
 Scroll backwards and forwards through the images using < and >.
 
@@ -255,10 +267,13 @@ Triptych
 3D images will be shown at the top with the 2D images they were made from shown beneath.
 
 3D Image Types
-Anaglyph/Side-By-Side/Crossover/Normal/Popout - these selections (see Processing for explanations) only affect 3D/Triptych views. If you have created more than one type of 3D image, you won't want to have to keep swapping viewing devices as you go through the images, these buttons allow you to restrict which image types are shown.
+These selections only affect 3D/Triptych views (see Processing for explanations). If you have created more than one type of 3D image, you won't want to have to keep swapping viewing devices as you go through the images, these buttons allow you to restrict which image types are shown.
 
 Delete
 If a 3D image is being displayed you may delete it. To ensure that you don't lose original images, 2D images cannot be deleted from within Popout3D. You could of course delete them using your file manager.
+
+Note
+You may need to view 3D images from further away than you might expect.
 '''
 
 # ==============================================================================
@@ -1200,7 +1215,7 @@ def on_activate(app):
 	page2.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page2.set_child(label2)
 	notebook.append_page(page2)
-	notebook.set_tab_label_text(page2, '3D Image Options')
+	notebook.set_tab_label_text(page2, 'File Selection')
 		
 	label3 = Gtk.Label.new(label3text)
 	label3.props.justify = Gtk.Justification.LEFT; label3.props.yalign = 0#; label3.props.xalign = .5
@@ -1209,7 +1224,7 @@ def on_activate(app):
 	page3.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page3.set_child(label3)
 	notebook.append_page(page3)
-	notebook.set_tab_label_text(page3, 'File Selection')
+	notebook.set_tab_label_text(page3, '3D Image Options')
 	
 	label4 = Gtk.Label.new(label4text)
 	label4.props.justify = Gtk.Justification.LEFT; label4.props.yalign = 0#; label4.props.xalign = .5
