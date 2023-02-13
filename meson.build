@@ -1,6 +1,6 @@
 project(
   'popout3d',
-  version: '1.5.4',
+  version: '1.6.01',
   meson_version: '>= 0.46.0'
 )
 
@@ -19,8 +19,7 @@ configure_file(
 )
 
 data_files = [
-  'popout3d.glade',
-  'popout3d.png',                       #for Glade  
+  'popout3d.png',                       #for Glade ??? for About???
   'com.github.PopoutApps.popout3d.png', #maybe desktop icon
   'dummy.png'
 ]
