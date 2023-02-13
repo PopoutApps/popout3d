@@ -263,7 +263,7 @@ If a 3D image is being displayed you may delete it. To ensure that you don't los
 
 # ==============================================================================
 def on_activate(app):
-	global viewind ##
+	global viewind
 
 	win = Gtk.ApplicationWindow(application=app)
 	win.maximize()
@@ -779,7 +779,7 @@ def on_activate(app):
 		
 			if os.path.isfile(myfold+newfilename1+'.'+newext1):
 
-				orientation1 = viewlist[viewind][3] ; orientation1 = 99 ##
+				orientation1 = viewlist[viewind][3]
 				if orientation1 == '3': # upside down, so rotate 180 clockwise
 					pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename1+'.'+newext1, width, height, True), 180)
 				elif orientation1 == '6': # top at right so rotate 270 clockwise
@@ -790,11 +790,12 @@ def on_activate(app):
 					pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(datafold+dummyfile, width, height, True)
 				else: #already upright or could not be determined
 					pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(myfold+newfilename1+'.'+newext1, width, height, True)
+					#pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilename1+'.'+newext1)
 			else: # not found
 				pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(datafold+dummyfile, width, height, True)
 
 			image1.set_from_pixbuf(pixbuf)
-			
+		
 	#-----------------------------------------------------------------------------
 	def checklist():
 		global pairlist
@@ -1453,7 +1454,7 @@ def on_activate(app):
 			newfile = file.get_path()
 		else: # answered No or closed window
 			return
-			
+
 		newfold, newfile = os.path.split(newfile)
 		newfile, newext = os.path.splitext(newfile)				
 
