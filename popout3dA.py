@@ -95,8 +95,9 @@ tipCrossover	= '3D images with right image on the left, left image on the right.
 tipNormal 		= 'Normal 3D images.'
 tipPopout			= '3D images which may appear to stand out in front of the screen.'
 
-##image1 = Gtk.Picture.new(); imageL = Gtk.Picture.new(); imageR = Gtk.Picture.new()
-##boxOuter1 = Gtk.Box(); boxOuterL = Gtk.Box(); boxOuterR = Gtk.Box()
+image1 = Gtk.Picture.new(); imageL = Gtk.Picture.new(); imageR = Gtk.Picture.new()
+boxOuter1 = Gtk.Box(); boxOuterL = Gtk.Box(); boxOuterR = Gtk.Box()
+GbuttonProcess = None
 
 #-------------------------------------------------------------------------------
 '''
@@ -284,10 +285,10 @@ Note
 You may need to view 3D images from further away than you might expect.
 '''
 
-#===============================================================================
+# ==============================================================================
 def on_activate(app):
 	global viewind
-	##global image1, imageL, imageR, boxOuter1, boxImageL, boxImageR
+	global image1, imageL, imageR, boxOuter1, boxImageL, boxImageR, GbuttonProcess
 
 	win = Gtk.ApplicationWindow(application=app)
 	win.maximize()
@@ -295,9 +296,9 @@ def on_activate(app):
 	win.set_titlebar(win.header)
 	win.present()
 
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def ask(widget, response, param):
-		global viewind
+		global reset
 		if response == Gtk.ResponseType.OK:
 			if param == 'preferences':
 				with open(configfold + preffile, 'w') as fn:
@@ -320,11 +321,11 @@ def on_activate(app):
 					ok = False
 					showInfo('File not found.')
 				if ok:
-					makeviewlist(False); viewind = 0; findNext('<'); showImage() 			
+					makeviewlist(False); findNext('<'); showImage() 			
 					GbuttonProcess.set_label('Queue')
 		widget.destroy()
 		
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def showInfo(messtext):
 		message = Gtk.MessageDialog(title = 'Information', text = messtext)
 		message.add_buttons('OK', Gtk.ResponseType.OK)
@@ -333,7 +334,7 @@ def on_activate(app):
 		message.connect('response', ask, None)
 		message.show()
 
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def showDelete():
 		message = Gtk.MessageDialog(title = 'Are you sure?', 
 			text = 'This will delete ' + viewlist[viewind][0]+'.'+viewlist[viewind][1])
@@ -343,7 +344,7 @@ def on_activate(app):
 		message.connect('response', ask, 'delete')
 		message.show()
 	
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def showPreferences(action, button):
 		message = Gtk.MessageDialog(title = 'Are you sure?', text = 'This will save your current settings as the defaults.')
 		message.set_transient_for(win); message.set_modal(win)
@@ -352,7 +353,7 @@ def on_activate(app):
 		message.connect('response', ask, 'preferences')
 		message.show()
 		
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def showAbout(action, button):
 		message = Gtk.AboutDialog(transient_for=win, modal=True)
 		message.set_logo_icon_name('com.github.PopoutApps.popout3d')
@@ -368,7 +369,7 @@ def on_activate(app):
 		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards.'])
 		message.show()
 
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def	showHelp(action, button):
 		message = Gtk.Window()
 		message.set_title('How to use Popout3D')
@@ -465,7 +466,7 @@ def on_activate(app):
 				fn.write(viewDim+'\n')
 				fn.write(viewType+'\n')
 
-	#-----------------------------------------------------------------------------		 
+	#-------------------------------------------------------------------------------		 
 	def exif(newfilename, newext):
 		'''
 		Open file, get tags, if processing turn and save the image.
@@ -506,7 +507,7 @@ def on_activate(app):
 		image.close
 		return orientationTag
 
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def findMatch():
 		global viewind # local searchlength, char1, char2, charN, viewindL, viewindR, viewindN
 
@@ -558,9 +559,9 @@ def on_activate(app):
 				elif viewindN > -1:
 					viewind = viewindN
 				else:
-					viewind = 0
+					viewind = -1
 
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def findNext(direction):
 		global viewind
 		#local found
@@ -587,7 +588,7 @@ def on_activate(app):
 
 	# if a further image wasn't found, leave viewind as it is.
 		 
-	#-----------------------------------------------------------------------------
+	#-------------------------------------------------------------------------------
 	def makepairlist(newfile, newformatcode, newstylecode, newext):
 		global warnings, pairlist, infolist, viewDim
 		# local imagestodo, imagesok
@@ -791,14 +792,11 @@ def on_activate(app):
 			else: # not found
 				pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
 
-		else:
-			pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
-
-		image1 = Gtk.Picture.new_for_pixbuf(pixbuf)
-		image1.props.hexpand = True; image1.props.vexpand = True
-		image1.props.content_fit = Gtk.ContentFit.CONTAIN
-		boxImage1.append(image1)
-
+			image1 = Gtk.Picture.new_for_pixbuf(pixbuf)
+			image1.props.hexpand = True; image1.props.vexpand = True
+			image1.props.content_fit = Gtk.ContentFit.CONTAIN
+			boxImage1.append(image1)
+	
 	#-----------------------------------------------------------------------------
 	def checkpairlist():
 		global pairlist
@@ -960,6 +958,7 @@ def on_activate(app):
 
 	#-----------------------------------------------------------------------------			
 	def buttonPrev(button):
+		#global infolist #4 removed
 		findNext('<')		
 		showImage()
 		if GbuttonProcess.get_label() == 'Reset':
@@ -969,6 +968,7 @@ def on_activate(app):
 				labelInfoTitle.set_markup('<b>Completed 3D Images</b>')
 	
 	def buttonNext(button):
+		#global infolist #4 removed
 		findNext('>')	
 		showImage()
 		if GbuttonProcess.get_label() == 'Reset':
@@ -1059,17 +1059,15 @@ def on_activate(app):
 			formatcode = 'A'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
-			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
-
+			makeviewlist(False); findMatch(); showImage()
+						
 	def tickSidebyside(menuitem):
 		global formatcode, pairlist
 		if menuitem.get_active():
 			formatcode = 'S'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
-			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False); findMatch(); showImage()
 							
 	def tickCrossover(menuitem):
 		global formatcode, pairlist
@@ -1077,8 +1075,7 @@ def on_activate(app):
 			formatcode = 'C'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
-			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False); findMatch(); showImage()
 
 	def tickNormal(menuitem):
 		global stylecode, pairlist
@@ -1086,8 +1083,7 @@ def on_activate(app):
 			stylecode = 'N'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
-			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False); findMatch(); showImage()
 
 	def tickPopout(menuitem):
 		global stylecode, pairlist
@@ -1095,8 +1091,7 @@ def on_activate(app):
 			stylecode = 'P'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
-			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False); findMatch(); showImage()
 
 	#-----------------------------------------------------------------------------			
 	def buttonProcess(button):
@@ -1135,12 +1130,12 @@ def on_activate(app):
 		
 			# make infolist and templist of projected images
 			if pairlist != []:
-				makeviewlist(True); viewind = 0; findNext('<'); showImage()
+				makeviewlist(True); imageind = 0; findNext('<'); showImage()
 				labelInfoTitle.set_markup('<b>Queue</b>')
 				GbuttonProcess.set_label('Process'); GbuttonProcess.props.tooltip_text = tipProcess
 				GtickView3D.set_active(True)
 			else: # empty list - warn nothing to process
-				makeviewlist(False); viewind = 0; findNext('<'); showImage()
+				makeviewlist(False); imageind = 0; findNext('<'); showImage()
 				showInfo('Nothing to process.')
 			
 
@@ -1256,7 +1251,7 @@ def on_activate(app):
 			showImage()
 			
 	#============================================================================= 
-	# notebook
+	# NOTEBOOK
 	notebook = Gtk.Notebook()
 	notebook.set_tab_pos(Gtk.PositionType.LEFT)
 	
@@ -1415,13 +1410,20 @@ def on_activate(app):
 	boxImage1.append(image1); boxImageL.append(imageL); boxImageR.append(imageR)	
 	boxDisplay.append(boxNext)
 	
+	'''
+	image1.props.hexpand = True
+	image1.props.vexpand = True
+	image1.props.halign = Gtk.Align.FILL
+	image1.props.valign = Gtk.Align.FILL
+	'''
+	
 	# margins---------------------------------------------------------------------
 	for i in (boxView,	boxProcess,	boxInfo, boxImages):
 	  i.set_margin_start(10); i.set_margin_end(10); i.set_margin_top(10)
 	boxImages.set_margin_bottom(10)
 	boxImagesLR.set_margin_top(5)
 	
-	# buttons---------------------------------------------------------------------
+	# BUTTONS --------------------------------------------------------------------
 	# create
 	GtickView2D = Gtk.CheckButton(label='2D'); GtickView2D.props.tooltip_text = tip2D
 	GtickViewTriptych = Gtk.CheckButton(label='Triptych'); GtickViewTriptych.props.tooltip_text = tipTriptych
@@ -1631,6 +1633,9 @@ def on_activate(app):
 		GtickNormal.set_active(True)
 	startup = False
 
+	####GbuttonProcess.set_label('Queue')
+	####labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
+		
 	if firstrun:
 		message = Gtk.MessageDialog(title = 'How to use Popout3D', text = label0text)
 		message.set_modal(win); message.set_transient_for(win)

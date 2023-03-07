@@ -9,13 +9,13 @@
 	<developer_name>PopoutApps</developer_name>
   <content_rating type="oars-1.0" />
   <releases>
-    <release date="2023-02-14" version="1.6.01" />
+    <release date="2023-03-07" version="1.6.02" />
   </releases>
   <description>
     <p>
       Popout3D creates 3D images from photographs taken with an ordinary camera.
       Take two photos of a subject and the software will create a 3D image from them. Vertical and  rotational alignment of the left and right images is essential for a convincing 3D effect, but difficult to achieve with an ordinary camera. This software corrects it. 3D image formats that can be created are anaglyph (red/cyan), side-by-side and crossover. 
-      Several photos can be processed at once, the resulting images can be reviewed and poor ones deleted.   
+      Several photos can be processed at once and the resulting images reviewed.   
     </p>
   </description> 
   <launchable type="desktop-id">com.github.PopoutApps.popout3d.desktop</launchable>

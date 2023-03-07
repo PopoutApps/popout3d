@@ -1,6 +1,15 @@
+# Was
+# popout3d.png                         was 128
+# com.github.PopoutApps.popout3d.png 	 was 64
+# now
+# com.github.PopoutApps.popout3d.png   is 128
+# com.github.PopoutApps.popout3d64x64.png is 64
+# could change bigger one to ...128 and rename in Meson
+
+
 project(
   'popout3d',
-  version: '1.6.01',
+  version: '1.6.02',
   meson_version: '>= 0.46.0'
 )
 
@@ -18,9 +27,10 @@ configure_file(
   install_dir: bindir
 )
 
+# for application
 data_files = [
-  'popout3d.png',                       #for Glade ??? for About???
-  'com.github.PopoutApps.popout3d.png', #maybe desktop icon
+  #'popout3d.png',												# 1.6.02 not needed
+  'com.github.PopoutApps.popout3d.png',
   'dummy.png'
 ]
 
@@ -28,22 +38,23 @@ foreach file : data_files
   install_data(file, install_dir: pkgdatadir)
 endforeach
 
+# per requirements
+install_data(
+  'com.github.PopoutApps.popout3d.appdata.xml',
+  install_dir: join_paths(datadir, 'metainfo')  
+)
+
 install_data(
   'com.github.PopoutApps.popout3d.desktop',
   install_dir: join_paths(datadir, 'applications')
 )
 
 install_data(
-  'popout3d.png', rename : 'com.github.PopoutApps.popout3d.png',
-  install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')
-)
-
-install_data(
   'com.github.PopoutApps.popout3d.png',
-  install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')  
+  install_dir: join_paths(datadir, 'icons', 'hicolor', '128x128', 'apps')  
 )
 
 install_data(
-  'com.github.PopoutApps.popout3d.appdata.xml',
-  install_dir: join_paths(datadir, 'metainfo')  
+  'com.github.PopoutApps.popout3d64x64.png', rename : 'com.github.PopoutApps.popout3d.png',
+  install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')
 )

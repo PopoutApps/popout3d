@@ -558,7 +558,7 @@ def on_activate(app):
 				elif viewindN > -1:
 					viewind = viewindN
 				else:
-					viewind = 0
+					viewind = -1
 
 	#-----------------------------------------------------------------------------
 	def findNext(direction):
@@ -701,7 +701,7 @@ def on_activate(app):
 	def showImage():
 		global image1, imageL, imageR, boxOuter1, boxOuterL, boxOuterR
 		#local newfilename1, newfilenameL, newfilenameR, newext1, newextL, newextR
-
+		print(viewind)
 		labelImage1.set_text('')
 		labelImageL.set_text('')
 		labelImageR.set_text('')
@@ -791,14 +791,11 @@ def on_activate(app):
 			else: # not found
 				pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
 
-		else:
-			pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
-
-		image1 = Gtk.Picture.new_for_pixbuf(pixbuf)
-		image1.props.hexpand = True; image1.props.vexpand = True
-		image1.props.content_fit = Gtk.ContentFit.CONTAIN
-		boxImage1.append(image1)
-
+			image1 = Gtk.Picture.new_for_pixbuf(pixbuf)
+			image1.props.hexpand = True; image1.props.vexpand = True
+			image1.props.content_fit = Gtk.ContentFit.CONTAIN
+			boxImage1.append(image1)
+	
 	#-----------------------------------------------------------------------------
 	def checkpairlist():
 		global pairlist
@@ -1059,8 +1056,8 @@ def on_activate(app):
 			formatcode = 'A'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
+			#makeviewlist(False); findMatch(); showImage()
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
 
 	def tickSidebyside(menuitem):
 		global formatcode, pairlist
@@ -1068,8 +1065,8 @@ def on_activate(app):
 			formatcode = 'S'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
+			#makeviewlist(False); findMatch(); showImage()
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
 							
 	def tickCrossover(menuitem):
 		global formatcode, pairlist
@@ -1077,8 +1074,8 @@ def on_activate(app):
 			formatcode = 'C'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
+			#makeviewlist(False); findMatch(); showImage()
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
 
 	def tickNormal(menuitem):
 		global stylecode, pairlist
@@ -1086,8 +1083,8 @@ def on_activate(app):
 			stylecode = 'N'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
+			#makeviewlist(False); findMatch(); showImage()
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
 
 	def tickPopout(menuitem):
 		global stylecode, pairlist
@@ -1095,8 +1092,8 @@ def on_activate(app):
 			stylecode = 'P'
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
+			#makeviewlist(False); findMatch(); showImage()
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
 
 	#-----------------------------------------------------------------------------			
 	def buttonProcess(button):
