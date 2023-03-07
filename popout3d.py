@@ -1060,7 +1060,7 @@ def on_activate(app):
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False)#; viewind = 0; findNext('<'); showImage()
 
 	def tickSidebyside(menuitem):
 		global formatcode, pairlist
@@ -1069,7 +1069,7 @@ def on_activate(app):
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False)#; viewind = 0; findNext('<'); showImage()
 							
 	def tickCrossover(menuitem):
 		global formatcode, pairlist
@@ -1078,7 +1078,7 @@ def on_activate(app):
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False)#; viewind = 0; findNext('<'); showImage()
 
 	def tickNormal(menuitem):
 		global stylecode, pairlist
@@ -1087,7 +1087,7 @@ def on_activate(app):
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False)#; viewind = 0; findNext('<'); showImage()
 
 	def tickPopout(menuitem):
 		global stylecode, pairlist
@@ -1096,7 +1096,7 @@ def on_activate(app):
 			GbuttonProcess.set_label('Queue'); GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + scope + ' Selection</b>')
 			pairlist = []						
-			makeviewlist(False); viewind = 0; findNext('<'); showImage()
+			makeviewlist(False)#; viewind = 0; findNext('<'); showImage()
 
 	#-----------------------------------------------------------------------------			
 	def buttonProcess(button):
