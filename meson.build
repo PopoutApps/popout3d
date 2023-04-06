@@ -1,15 +1,8 @@
-# Was
-# popout3d.png                         was 128
-# com.github.PopoutApps.popout3d.png 	 was 64
-# now
-# com.github.PopoutApps.popout3d.png   is 128
-# com.github.PopoutApps.popout3d64x64.png is 64
-# could change bigger one to ...128 and rename in Meson
-
+# https://mesonbuild.com/Builtin-options.html language files
 
 project(
   'popout3d',
-  version: '1.6.02',
+  version: '1.6.03',
   meson_version: '>= 0.46.0'
 )
 
@@ -29,7 +22,6 @@ configure_file(
 
 # for application
 data_files = [
-  #'popout3d.png',												# 1.6.02 not needed
   'com.github.PopoutApps.popout3d.png',
   'dummy.png'
 ]
@@ -57,4 +49,10 @@ install_data(
 install_data(
   'com.github.PopoutApps.popout3d64x64.png', rename : 'com.github.PopoutApps.popout3d.png',
   install_dir: join_paths(datadir, 'icons', 'hicolor', '64x64', 'apps')
+)
+
+# language files
+install_data(
+  'popout3d_nl_NL.mo', rename : 'popout3d.mo',
+  install_dir: join_paths(get_option('prefix'), get_option('localedir'), 'nl_NL', 'LC_MESSAGES')
 )
