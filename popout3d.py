@@ -50,9 +50,14 @@ try:
 except:
 		print('Cannot import locale')
 
+try:
+	import webbrowser
+except:
+		print('Cannot import webbrowser')
+
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.03'  					# formatted for "About"
+version = '1.6.04'  					# formatted for "About"
 firstrun = True
 
 viewDim = 'All'								# which sort of images to show
@@ -85,6 +90,9 @@ processlist = False						# whether to show only recently processed files 32X
 runningfile = 'RUNNING'				# to show that multiprocessing is running
 stopfile  = 'STOP'						# to tell multiprocessing to stop
 process = 'queue'							# queue/process/reset
+
+urlGitHub = 'https://github.com/PopoutApps/popout3d/issues'
+urlCrowdin = 'https://crowdin.com/project/popout3d'
 
 #-------------------------------------------------------------------------------
 '''
@@ -127,8 +135,10 @@ else: # no package for testing
 	datafold = '/home/chris/git/popout3d/'
 	lang_path = '/home/chris/git/locale/'	# gettext will add {language}/LC_MESSAGES to lang_path
 
-# Set locale to users default language (otherwise might be C/POSIX locale) then get the locale.
-locale.setlocale(locale.LC_ALL, ''); language = locale.getlocale()[0] # '' sets to default language
+
+locale.setlocale(locale.LC_ALL, '') # For words in GTK4 itself, locale to users default language (otherwise might be C/POSIX locale)
+language = locale.getlocale()[0] 		# get OS language for program's words
+
 lang = gettext.translation('popout3d', localedir=lang_path, languages=[language], fallback=True)
 _ = lang.gettext
 
@@ -158,48 +168,35 @@ tipNormal 		= _('A normal 3D image.')
 tipPopout			= _('A 3D image which may appear to stand out in front of the screen.')
 
 # Help pages
-# Basics
-label0text = _('''Take two photos of a stationary subject, preferably in landscape format. Take the first, then move the camera about 60mm to the right, but point it at the same thing. Copy them to your PC, then rename them so that they have exactly the same name except that the left one has 'L' at the end and the right one has 'R'. For example photoL.JPG and photoR.JPG.
+# Basics -----------------------------------------------------------------------
+label1BasicsTake = '''Take two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same thing and take another. Copy them to your PC, then rename them so that they have exactly the same name, but add an 'L' at the end of the left-hand one, add an 'R' to the end of the right-hand one. For example photoL.JPG and photoR.JPG.
 
-Open Popout3D then use Open>File to select either photo. Click Queue to see what 3D images will be created, the button will change to Process. Click it to begin processing. The button will change to Reset. If you use the < and > arrows you see a grey rectangle until the 3D image is complete when it will appear. It will take several seconds.
+Open Popout3D and select one of these photos with Open>File. Click Queue to see which 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
 
-You will need 3D glasses to see anaglyph images or 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without.''')
-# Source Photographs
-label1text = _('''You don't need a special camera, you can use an ordinary one or even a mobile phone. Choose a subject that won't move between photos.
+You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without the goggles.'''
 
-Take two photographs of the same subject, one for the left-hand image, and after moving the camera about 60mm to the right, take another for the right-hand image. Try to get exactly the same thing in the centre of both photos. If you find it difficult to get the separation right you can take 3 or more photos at different separations. Don't take too many as this would result in a large number of 3D images which would take a long time to process. Always take them in sequence from left to right so you don't get them mixed up.
+# Source Files -----------------------------------------------------------------
+label2SourceChoose = '''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right but pointing at the same thing, and take another. Always take them in sequence from left to right, so you don't get them mixed up. Popout3D may not be able to read/write image files on your camera or mobile phone and the 3D images you create will need extra space, so it's best to copy your original photos onto your PC. It is also easier to rename the photos on your PC. Rename them so that they have exactly the same name, but add an 'L' at the end of the left-hand one, and add an 'R' to the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the spacing right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
 
-Each set of images (all those for the same subject) must be in the same format - .jpg, .tiff or .png, and the extensions must have the same case - all lowercase or all uppercase. They must be exactly the same size in pixels.
-
-You may not be able to read/write image files on your camera or phone and the 3D images you create will need extra space, so it's best to copy your originals onto your PC.
-
-When you have loaded them onto your PC, make sure that for all images intended for the same 3D image have the same filename followed by a digit that increases as the images were taken from left to right, for example:
-DSCN0362.JPG - leftmost image
-DSCN0363.JPG - middle image
-DSCN0365.JPG - rightmost image
-If you only took 2 you could end them with L and R.
-Note that the Popout3D only lists and displays files with such names.
+Each set of images (all those for the same subject) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
 
 Movement
-Stationary objects like buildings or scenery give good results.
-
-Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may be work in the right circumstances, for example if there isn't too much wind, and the water is placid.
-
-Moving vehicles or people, or fast-flowing water like a waterfall or waves won't work.
+Stationary objects like buildings or scenery give good results. Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may be work in the right circumstances, for example if there isn't too much wind, and the water is placid. Moving vehicles or people, or fast-flowing water like a waterfall or waves won't work.
 
 Quality of Effect
 A picture with objects at varying distances results in a convincing effect. Distant scenery won't work well, as there is little perspective effect anyway.
 
+Notes
 Some images are too difficult for the aligning software, and the resulting image is unusable.
 
-Notes
-Images must have exactly the same width and height in pixels. This makes editing the original L and R images difficult, but it can be done with a photo editor like rawTherapee which shows you the size that the edited image will have so you can match them. It is easier to edit the 3D image, although you can't crop Side-By-Side or Crossover ones.
+Avoid images with all red or all cyan objects. They will look odd as they only appear in one eye.
 
-Avoid images with all red or all cyan objects as they only appear in one eye so look odd.
+Because the 2D images must have exactly the same width and height in pixels, editing them is difficult. It can be done with a photo editor like rawTherapee, which shows you the size that the edited image will have, so you can make them match. It is easier to edit the 3D image, although you can't crop Side-By-Side or Crossover ones.
 
-Strange effects from nearby objects might be caused by the camera's depth of field being high. A shorter exposure will reduce the depth of field.''')
-# File Selection
-label2text = _('''File
+Nearby objects can cause strange effects when the camera's depth of field is high. A shorter exposure will reduce the depth of field.'''
+
+# File Selection----------------------------------------------------------------
+label3FileFile = '''File
 To process a single set of images which are all for the same subject, first use Open>File to choose any file from the set.
 
 scenery1.jpg
@@ -220,11 +217,10 @@ scenery13AN.jpg was made with scenery1.jpg for the left image and scenery3.jpg f
 With images ending in L and R you would get sceneryLRAN.jpg.
 
 Folder:
-To process all the image sets in a folder, first use Open>folder to choose the folder with the sets of images.
-''')
+To process all the image sets in a folder, first use Open>Folder to choose the folder with the sets of images.'''
 
-# 3D Image Options
-label3text = _('''The format of the 3D image can may be:
+# Options for 3D Images --------------------------------------------------------
+label4OptionsThe = '''The format of the 3D image can may be:
 
 Anaglyph
 A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
@@ -241,9 +237,10 @@ Normal
 A normal 3D image with the front of the picture level with the screen.
 
 Popout
-A 'popout' image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".''')
-# Processing
-label4text = _('''For the 3D effect to work it is essential that each pair of images is prefectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
+A 'popout' image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".'''
+
+# Processing -------------------------------------------------------------------
+label5ProcessingFor = '''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
 
 An existing 3D image file will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing 3D image.
 
@@ -251,19 +248,20 @@ To start processing the selected images, click on "Queue", this will show a list
 If you are happy with this list, press "Process", the button will change to "Reset". You can use the < and > buttons to look for completed 3D images. Only the recently processed images are shown. When you have finished checking them, press "Reset" to go back to the File or Folder selection, now including the new images. Using the Open menu or the Delete or process buttons will also reset the list.
 
 Notes
-Portrait images from a phone may be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
+Portrait images from a mobile phone may be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
 
-Mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
+Mobile mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
 
 The 3D images won't have valid EXIF tags.
 
 Preferences from previous versions of the program are not loaded.
 
-If you can't remember which of a pair of images was left and which was right, create a 3D image as usual. If it doesn't look right with your anaglyph glasses on normally, try with them on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image.
+If you can't remember which image was left and which was right, create a 3D image as usual. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image.
 
-You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.''')
-# View
-label5text = _('''Scroll backwards and forwards through the images using < and >.
+You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''
+
+# View -------------------------------------------------------------------------
+label6ViewScroll = '''Scroll backwards and forwards through the images using < and >.
 
 All
 All the images in the chosen folder or set which follow the naming rules will be shown.
@@ -284,7 +282,7 @@ Delete
 If a 3D image is being displayed you may delete it. To ensure that you don't lose original images, 2D images cannot be deleted from within Popout3D. You could of course delete them using your file manager.
 
 Notes
-You may need to view 3D images from further away than you might expect.''')
+You may need to view 3D images from further away than you might expect.'''
 
 #===============================================================================
 def on_close_request(app): # When window is closed with X
@@ -344,7 +342,6 @@ def on_activate(app):
 		message.connect('response', ask, None)
 		message.show()
 
-	#-----------------------------------------------------------------------------
 	def showDelete():
 		message = Gtk.MessageDialog(title = _('Are you sure?'), 
 			text = _('This will delete') +' ' + viewlist[viewind][0]+'.'+viewlist[viewind][1])
@@ -354,7 +351,6 @@ def on_activate(app):
 		message.connect('response', ask, 'delete')
 		message.show()
 	
-	#-----------------------------------------------------------------------------
 	def showPreferences(action, button):
 		message = Gtk.MessageDialog(title = _('Are you sure?'), text = _('This will save your current settings as the defaults.'))
 		message.set_transient_for(win); message.set_modal(win)
@@ -363,13 +359,12 @@ def on_activate(app):
 		message.connect('response', ask, 'preferences')
 		message.show()
 		
-	#-----------------------------------------------------------------------------
 	def showAbout(action, button):
 		message = Gtk.AboutDialog(transient_for=win, modal=True)
 		message.set_logo_icon_name('com.github.PopoutApps.popout3d')
 		message.set_program_name('Popout3D')
 		message.set_version(version)
-		message.set_comments(_('Create a 3D image from ordinary photographs.\n\nBugs can be reported on GitHub.'))
+		message.set_comments(_('Create a 3D image from ordinary photographs.'))
 		message.set_website_label('Popout3D ' + _('on') + ' GitHub')
 		message.set_website('https://github.com/PopoutApps/popout3d')
 		message.set_copyright(_('Copyright') + ' 2022, 2023 Chris Rogers')
@@ -379,7 +374,6 @@ def on_activate(app):
 		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards.'])
 		message.show()
 
-	#-----------------------------------------------------------------------------
 	def	showHelp(action, button):
 		message = Gtk.Window()
 		message.set_title(_('How to use Popout3D'))
@@ -388,7 +382,12 @@ def on_activate(app):
 		message.set_transient_for(win); message.set_modal(win)
 		message.show()
 	
-	#-----------------------------------------------------------------------------
+	def	showBugs(action, button):
+		result = webbrowser.open(urlGitHub)
+		
+	def	showLocale(action, button):
+		result = webbrowser.open(urlCrowdin)
+		
 	def readpreferences():
 		global version, myfold, myfile, myext, formatcode, stylecode, viewDim, scope, viewType, firstrun
 		# local okpref, okcol, ver, i
@@ -1174,7 +1173,7 @@ def on_activate(app):
 			labelInfoTitle.set_markup('<b>' +_('Processing 3D Images') +'</b>')
 
 		warnings = ''			
-
+	
 	def buttonDelete(button): # was (self, button)
 		global viewind
 		#local ok
@@ -1278,7 +1277,7 @@ def on_activate(app):
 	notebook = Gtk.Notebook()
 	notebook.set_tab_pos(Gtk.PositionType.LEFT)
 	
-	label0 = Gtk.Label.new(label0text)
+	label0 = Gtk.Label.new(_(label1BasicsTake))
 	label0.props.justify = Gtk.Justification.LEFT; label0.props.yalign = 0#; label0.props.xalign = .5
 	label0.set_wrap(True)
 	page0 = Gtk.ScrolledWindow()
@@ -1287,7 +1286,7 @@ def on_activate(app):
 	notebook.append_page(page0)
 	notebook.set_tab_label_text(page0, _('Basics'))
 
-	label1 = Gtk.Label.new(label1text)
+	label1 = Gtk.Label.new(_(label2SourceChoose))
 	label1.props.justify = Gtk.Justification.LEFT; label1.props.yalign = 0#; label1.props.xalign = .5
 	label1.set_wrap(True)
 	page1 = Gtk.ScrolledWindow()
@@ -1296,7 +1295,7 @@ def on_activate(app):
 	notebook.append_page(page1)
 	notebook.set_tab_label_text(page1, _('Source Photographs'))
 		
-	label2 = Gtk.Label.new(label2text)
+	label2 = Gtk.Label.new(_(label3FileFile))
 	label2.props.justify = Gtk.Justification.LEFT; label2.props.yalign = 0#; label2.props.xalign = .5
 	label2.set_wrap(True)
 	page2 = Gtk.ScrolledWindow()
@@ -1305,7 +1304,7 @@ def on_activate(app):
 	notebook.append_page(page2)
 	notebook.set_tab_label_text(page2, _('File Selection'))
 		
-	label3 = Gtk.Label.new(label3text)
+	label3 = Gtk.Label.new(_(label4OptionsThe))
 	label3.props.justify = Gtk.Justification.LEFT; label3.props.yalign = 0#; label3.props.xalign = .5
 	label3.set_wrap(True)
 	page3 = Gtk.ScrolledWindow()
@@ -1314,7 +1313,7 @@ def on_activate(app):
 	notebook.append_page(page3)
 	notebook.set_tab_label_text(page3, _('3D Image Options'))
 	
-	label4 = Gtk.Label.new(label4text)
+	label4 = Gtk.Label.new(_(label5ProcessingFor))
 	label4.props.justify = Gtk.Justification.LEFT; label4.props.yalign = 0#; label4.props.xalign = .5
 	label4.set_wrap(True)
 	page4 = Gtk.ScrolledWindow()
@@ -1323,7 +1322,7 @@ def on_activate(app):
 	notebook.append_page(page4)
 	notebook.set_tab_label_text(page4, _('Process'))
 	
-	label5 = Gtk.Label.new(label5text)
+	label5 = Gtk.Label.new(_(label6ViewScroll))
 	label5.props.justify = Gtk.Justification.LEFT; label5.props.yalign = 0#; label5.props.xalign = .5
 	label5.set_wrap(True)
 	page5 = Gtk.ScrolledWindow()
@@ -1363,6 +1362,7 @@ def on_activate(app):
 	boxOptions.append(boxView)
 	
 	labelView = Gtk.Label.new(); labelView.set_markup('<b>' +_('View') +'</b>')
+	
 	boxView.append(labelView)
 	boxView.append(boxViewT)
 	labelViewtype = Gtk.Label.new(); labelViewtype.set_markup('<b>' +_('3D Image Types') +'</b>')
@@ -1571,6 +1571,8 @@ def on_activate(app):
 	# main stripey menu
 	menu2 = Gio.Menu.new()
 	menu2.append(_('Preferences'), 'win.menuitemPreferences')
+	menu2.append(_('Report a Bug on GitHub'), 'win.menuitemBugs')
+	menu2.append(_('Improve a Translation on Crowdin'), 'win.menuitemLocale')
 	menu2.append(_('Help'), 'win.menuitemHelp')
 	menu2.append(_('About Popout3D'), 'win.menuitemAbout')
 
@@ -1585,7 +1587,7 @@ def on_activate(app):
 	menuStripey.set_icon_name('open-menu-symbolic')
 	win.header.pack_end(menuStripey)
 	
-	# add options to main menu
+	# add actions to main stripey menu options
 	# preferences
 	action = Gio.SimpleAction.new('menuitemPreferences')
 	action.connect('activate', showPreferences)
@@ -1593,14 +1595,24 @@ def on_activate(app):
 	
 	# help
 	action = Gio.SimpleAction.new('menuitemHelp')
-	action.connect('activate', showHelp)#, win)
+	action.connect('activate', showHelp)
 	win.add_action(action)
 	
 	# about
 	action = Gio.SimpleAction.new('menuitemAbout')
 	action.connect('activate', showAbout)
+	win.add_action(action)	
+
+	# bugs
+	action = Gio.SimpleAction.new('menuitemBugs')
+	action.connect('activate', showBugs)
 	win.add_action(action)
-	
+
+	# locale
+	action = Gio.SimpleAction.new('menuitemLocale')
+	action.connect('activate', showLocale)
+	win.add_action(action)
+
 	#-----------------------------------------------------------------------------
 	readpreferences()
 
@@ -1650,7 +1662,7 @@ def on_activate(app):
 	startup = False
 
 	if firstrun:
-		message = Gtk.MessageDialog(title = _('How to use Popout3D'), text = label0text)
+		message = Gtk.MessageDialog(title = _('How to use Popout3D'), text = label1BasicsTake)
 		message.set_modal(win); message.set_transient_for(win)
 		message.add_buttons(_('OK'), Gtk.ResponseType.OK)		
 		response = message.connect('response', ask, None)

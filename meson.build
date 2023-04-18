@@ -1,8 +1,6 @@
-# https://mesonbuild.com/Builtin-options.html language files
-
 project(
   'popout3d',
-  version: '1.6.03',
+  version: '1.6.04',
   meson_version: '>= 0.46.0'
 )
 
@@ -20,7 +18,7 @@ configure_file(
   install_dir: bindir
 )
 
-# for application
+# dummy image and logo for About
 data_files = [
   'com.github.PopoutApps.popout3d.png',
   'dummy.png'
@@ -55,4 +53,9 @@ install_data(
 install_data(
   'popout3d_nl_NL.mo', rename : 'popout3d.mo',
   install_dir: join_paths(get_option('prefix'), get_option('localedir'), 'nl_NL', 'LC_MESSAGES')
+)
+
+install_data(
+  'popout3d_de_DE.mo', rename : 'popout3d.mo',
+  install_dir: join_paths(get_option('prefix'), get_option('localedir'), 'de_DE', 'LC_MESSAGES')
 )
