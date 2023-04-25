@@ -57,7 +57,7 @@ except:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.04'  					# formatted for "About"
+version = '1.6.41'  					# formatted for "About"
 firstrun = True
 
 viewDim = 'All'								# which sort of images to show
@@ -91,7 +91,7 @@ runningfile = 'RUNNING'				# to show that multiprocessing is running
 stopfile  = 'STOP'						# to tell multiprocessing to stop
 process = 'queue'							# queue/process/reset
 
-urlGitHub = 'https://github.com/PopoutApps/popout3d/issues'
+urlForum = 'https://github.com/PopoutApps/popout3d/discussions'
 urlCrowdin = 'https://crowdin.com/project/popout3d'
 
 #-------------------------------------------------------------------------------
@@ -340,7 +340,7 @@ def on_activate(app):
 		message.set_transient_for(win); message.set_modal(win)
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, None)
-		message.show()
+		message.set_visible(True) #####message.show()
 
 	def showDelete():
 		message = Gtk.MessageDialog(title = _('Are you sure?'), 
@@ -349,7 +349,7 @@ def on_activate(app):
 		message.set_transient_for(win); message.set_modal(win)		
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, 'delete')
-		message.show()
+		message.set_visible(True)#####message.show()
 	
 	def showPreferences(action, button):
 		message = Gtk.MessageDialog(title = _('Are you sure?'), text = _('This will save your current settings as the defaults.'))
@@ -357,7 +357,7 @@ def on_activate(app):
 		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('OK'), Gtk.ResponseType.OK)
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, 'preferences')
-		message.show()
+		message.set_visible(True)#####message.show()
 		
 	def showAbout(action, button):
 		message = Gtk.AboutDialog(transient_for=win, modal=True)
@@ -372,7 +372,7 @@ def on_activate(app):
 		message.set_authors(['PopoutApps'])
 		message.add_credit_section(section_name=_('Image Alignment'), people=['Hugin'])
 		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards.'])
-		message.show()
+		message.set_visible(True)#####message.show()
 
 	def	showHelp(action, button):
 		message = Gtk.Window()
@@ -380,10 +380,10 @@ def on_activate(app):
 		message.set_default_size(1000, 700)
 		message.set_child(notebook)
 		message.set_transient_for(win); message.set_modal(win)
-		message.show()
+		message.set_visible(True)#####message.show()
 	
-	def	showBugs(action, button):
-		result = webbrowser.open(urlGitHub)
+	def	showForum(action, button):
+		result = webbrowser.open(urlForum)
 		
 	def	showLocale(action, button):
 		result = webbrowser.open(urlCrowdin)
@@ -518,20 +518,20 @@ def on_activate(app):
 
 	#-----------------------------------------------------------------------------
 	def findMatch():
-		global viewind # local searchlength, char1, char2, charN, viewindL, viewindR, viewindN
+		global viewind 
+		# local searchlength, char1, char2, charN, viewindL, viewindR, viewindN, imageDim
 
 		if len(viewlist) > 0 and viewDim != 'All': # Can use same image if switching viewDim to All
 			searchfilename = viewlist[viewind][0]; searchlength = -1 
-			searchext = viewlist[viewind][1]; dimensions = viewlist[viewind][2]
+			searchext = viewlist[viewind][1]; imageDim = viewlist[viewind][2]
 			char1 = char2 = ''; viewindL = viewindR = viewindN = -1
 
-			if not (viewDim == 'All' or viewDim == dimensions or (viewDim == 'Triptych' and dimensions == '3D')):		
+			if not (viewDim == 'All' or viewDim == imageDim or (viewDim == 'Triptych' and imageDim == '3D')):		
 				# switching viewDim to 2D
 				# get basic filename, length and 2 characters
-				if viewDim == '2D' and dimensions == '3D':
+				if viewDim == '2D' and imageDim == '3D':
 					searchname = searchfilename[:-4];	searchlength = len(searchname)
 					char1 = searchfilename[-4]; char2 = searchfilename[-3]
-
 					# search through list
 					viewindL = viewindR = viewindN = -1
 					for record in viewlist:
@@ -545,10 +545,9 @@ def on_activate(app):
 	
 				# switching viewDim to 3D
 				# get basic filename and 1 character
-				elif viewDim in ('3D', 'Triptych') and dimensions == '2D':
+				elif viewDim in ('3D', 'Triptych') and imageDim == '2D':
 					searchname = searchfilename[:-1];	searchlength = len(searchname)
 					char1 = searchfilename[-1]; char2 = ''
-			
 					# search through list
 					viewindL = viewindR = viewindN = -1
 					for record in viewlist:
@@ -570,6 +569,7 @@ def on_activate(app):
 				else:
 					viewind = 0
 
+		#####viewlist[viewind][0][-2] in viewType and viewlist[viewind][0][-1] in viewType
 	#-----------------------------------------------------------------------------
 	def findNext(direction):
 		global viewind
@@ -969,7 +969,6 @@ def on_activate(app):
 				os.remove(workfold+runningfile)
 				
 	#-----------------------------------------------------------------------------			
-	# including spaces and html from here
 	def buttonPrev(button):
 		findNext('<')		
 		showImage()
@@ -1017,51 +1016,51 @@ def on_activate(app):
 			if not startup:
 				findMatch(); showImage()
 				
-	#-----------------		
+	#-----------------#5#	
 	def tickViewAnaglyph(menuitem):
 		global viewType
 		if menuitem.get_active():	
-			if not startup:
-				findMatch(); showImage()
 			viewType = viewType[:0] + 'A' + viewType[1:]
 		else:
 			viewType = viewType[:0] + '-' + viewType[1:]
-									
+		if not startup:
+			findMatch(); showImage()									
+
 	def tickViewSidebyside(menuitem):
 		global viewType
 		if menuitem.get_active():	
-			if not startup:
-				findMatch(); showImage()
 			viewType = viewType[:1] + 'S' + viewType[2:]
 		else:
 			viewType = viewType[:1] + '-' + viewType[2:]
+		if not startup:
+			findMatch(); showImage()									
 										
 	def tickViewCrossover(menuitem):
 		global viewType
 		if menuitem.get_active():	
-			if not startup:
-				findMatch(); showImage()
 			viewType = viewType[:2] + 'C' + viewType[3:]
 		else:
 			viewType = viewType[:2] + '-' + viewType[3:]
+		if not startup:
+			findMatch(); showImage()									
 
 	def tickViewNormal(menuitem):
 		global viewType
 		if menuitem.get_active():	
-			if not startup:
-				findMatch(); showImage()
 			viewType = viewType[:3] + 'N' + viewType[4:]
 		else:
 			viewType = viewType[:3] + '-' + viewType[4:]
+		if not startup:
+			findMatch(); showImage()									
 
 	def tickViewPopout(menuitem):
 		global viewType
 		if menuitem.get_active():	
-			if not startup:
-				findMatch(); showImage()
 			viewType = viewType[:4] + 'P' + viewType[5:]
 		else:
 			viewType = viewType[:4] + '-' + viewType[5:]
+		if not startup:
+			findMatch(); showImage()									
 
 	#-----------------			
 	def tickAnaglyph(menuitem):
@@ -1458,8 +1457,13 @@ def on_activate(app):
 	GtickNormal = Gtk.CheckButton(label=_('Normal')); GtickNormal.props.tooltip_text = tipNormal
 	GtickPopout = Gtk.CheckButton(label=_('Popout')); GtickPopout.props.tooltip_text = tipPopout
 
-	GbuttonDelete = Gtk.Button(label=_('Delete')); GbuttonDelete.props.tooltip_text = tipDelete	
-	GbuttonProcess = Gtk.Button(label=_('Queue')); process = 'queue'; GbuttonProcess.props.tooltip_text = tipQueue
+	GbuttonDelete = Gtk.Button(label=_('Delete')); GbuttonDelete.props.width_request = 100
+	GbuttonDelete.props.tooltip_text = tipDelete	
+	
+	
+	GbuttonProcess = Gtk.Button(label=_('Queue')); process = 'queue';
+	GbuttonProcess.props.width_request = 100
+	GbuttonProcess.props.tooltip_text = tipQueue
 
 	GbuttonPrev = Gtk.Button(); GbuttonPrev.set_icon_name('go-previous-symbolic-symbolic'); GbuttonPrev.props.tooltip_text = tipPrev
 	GbuttonNext = Gtk.Button(); GbuttonNext.set_icon_name('go-next-symbolic-symbolic'); GbuttonNext.props.tooltip_text = tipNext; GbuttonNext.props.valign = Gtk.Align.CENTER
@@ -1539,6 +1543,7 @@ def on_activate(app):
 
 	# Create open menu button
 	menuOpen = Gtk.MenuButton(label=_('Open')); menuOpen.props.tooltip_text = tipOpen
+	menuOpen.props.width_request = 85 #####
 	menuOpen.set_popover(popover1)
 	win.header.pack_start(menuOpen)
 
@@ -1555,7 +1560,6 @@ def on_activate(app):
 	open_dialog_file = Gtk.FileChooserNative.new(title=_('Select any file from a set of images'), parent=win, action=Gtk.FileChooserAction.OPEN)
 	
 	open_dialog_file.connect('response', open_response_file)
-	
 	f = Gtk.FileFilter()
 	f.set_name(_('Image files'))
 	f.add_mime_type('image/jpeg')
@@ -1571,7 +1575,7 @@ def on_activate(app):
 	# main stripey menu
 	menu2 = Gio.Menu.new()
 	menu2.append(_('Preferences'), 'win.menuitemPreferences')
-	menu2.append(_('Report a Bug on GitHub'), 'win.menuitemBugs')
+	menu2.append(_('Forum'), 'win.menuitemForum')
 	menu2.append(_('Improve a Translation on Crowdin'), 'win.menuitemLocale')
 	menu2.append(_('Help'), 'win.menuitemHelp')
 	menu2.append(_('About Popout3D'), 'win.menuitemAbout')
@@ -1603,9 +1607,9 @@ def on_activate(app):
 	action.connect('activate', showAbout)
 	win.add_action(action)	
 
-	# bugs
-	action = Gio.SimpleAction.new('menuitemBugs')
-	action.connect('activate', showBugs)
+	# Forum
+	action = Gio.SimpleAction.new('menuitemForum')
+	action.connect('activate', showForum)
 	win.add_action(action)
 
 	# locale
@@ -1666,7 +1670,7 @@ def on_activate(app):
 		message.set_modal(win); message.set_transient_for(win)
 		message.add_buttons(_('OK'), Gtk.ResponseType.OK)		
 		response = message.connect('response', ask, None)
-		message.show()
+		message.set_visible(True) #####message.show()
 	
 	makeviewlist(False); viewind = 0
 	if len(viewlist) > 0:
