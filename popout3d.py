@@ -517,28 +517,28 @@ def on_activate(app):
 		return orientationTag
 
 	#-----------------------------------------------------------------------------
-	def findMatch():
-		global viewind 
-		# local searchlength, char1, char2, charN, viewindL, viewindR, viewindN, imageDim
+	def findVmatch():
+		global viewind # local searchlength, charL, charR, viewindL, viewindR, viewindN
 
-		if len(viewlist) > 0 and viewDim != 'All': # Can use same image if switching viewDim to All
+		if len(viewlist) > 0: #and viewDim != 'All': # Can use same image if switching viewDim to All
 			searchfilename = viewlist[viewind][0]; searchlength = -1 
 			searchext = viewlist[viewind][1]; imageDim = viewlist[viewind][2]
-			char1 = char2 = ''; viewindL = viewindR = viewindN = -1
+			charL = charR = ''; viewindL = viewindR = viewindN = -1
 
-			if not (viewDim == 'All' or viewDim == imageDim or (viewDim == 'Triptych' and imageDim == '3D')):		
+			if not (viewDim == 'All' or viewDim == imageDim or (viewDim == 'Triptych' and imageDim == '3D')):	
 				# switching viewDim to 2D
 				# get basic filename, length and 2 characters
 				if viewDim == '2D' and imageDim == '3D':
 					searchname = searchfilename[:-4];	searchlength = len(searchname)
-					char1 = searchfilename[-4]; char2 = searchfilename[-3]
+					charL = searchfilename[-4]; charR = searchfilename[-3]
+
 					# search through list
 					viewindL = viewindR = viewindN = -1
 					for record in viewlist:
 						if record[1] == searchext and record[2] == '2D':					
-							if viewindL < 0 and searchname+char1 in record[0][:searchlength+1]:
+							if viewindL < 0 and searchname+charL in record[0][:searchlength+1]:
 								viewindL = viewlist.index(record) # L of 3D image matches a 2D image
-							elif viewindR < 0 and searchname+char2 in record[0][:searchlength+1]:
+							elif viewindR < 0 and searchname+charR in record[0][:searchlength+1]:
 								viewindR = viewlist.index(record) # R of 3D image matches a 2D image
 							elif viewindN < 0 and searchname in record[0][:searchlength]:
 								viewindN = viewlist.index(record) # match for basic name
@@ -547,15 +547,16 @@ def on_activate(app):
 				# get basic filename and 1 character
 				elif viewDim in ('3D', 'Triptych') and imageDim == '2D':
 					searchname = searchfilename[:-1];	searchlength = len(searchname)
-					char1 = searchfilename[-1]; char2 = ''
+					charL = searchfilename[-1]; charR = ''
+			
 					# search through list
 					viewindL = viewindR = viewindN = -1
 					for record in viewlist:
 						if (record[1] == searchext and record[2] == '3D'
 							and record[0][-2] in viewType and record[0][-1] in viewType):
-							if viewindL < 0 and searchname+char1 in record[0][:searchlength+1]:
+							if viewindL < 0 and searchname+charL in record[0][:searchlength+1]:
 								viewindL = viewlist.index(record) # char of 2D image matches 1st char of a 3D image
-							elif viewindR < 0 and searchname+char1 in record[0][:searchlength]+record[0][-3]:
+							elif viewindR < 0 and searchname+charL in record[0][:searchlength]+record[0][-3]:
 								viewindR = viewlist.index(record) # char of 2D image matches 2nd char of a 3D image
 							elif viewindN < 0 and searchname in record[0][:searchlength]:
 								viewindN = viewlist.index(record) # match for basic name
@@ -569,7 +570,45 @@ def on_activate(app):
 				else:
 					viewind = 0
 
-		#####viewlist[viewind][0][-2] in viewType and viewlist[viewind][0][-1] in viewType
+	#-----------------------------------------------------------------------------
+	def findFSmatch():
+		global viewind # local searchlength, charL, charR, viewindL, viewindR, viewindN
+
+		if len(viewlist) > 0:
+			# Details of current image
+			searchfilename = viewlist[viewind][0]; searchext = viewlist[viewind][1]
+			searchname = searchfilename[:-4];	searchlength = len(searchname)
+			charL = searchfilename[-4]; charR = searchfilename[-3]
+			charF = searchfilename[-2]; charS = searchfilename[-1]
+
+			# might be still valid, if not search viewlist
+			if not (charF in viewType and charS in viewType): 
+				viewindLR = viewindL = viewindR = viewindName = -1
+				for record in viewlist:
+					if (record[1] == searchext and record[2] == '3D'
+						and record[0][-2] in viewType and record[0][-1] in viewType
+						 ):
+						if viewindLR < 0 and searchname+charL+charR in record[0][:searchlength+2]:
+							viewindLR = viewlist.index(record) # both L and R chars match
+						# rest same as 2D to 3D
+						elif viewindL < 0 and searchname+charL in record[0][:searchlength+1]: 
+							viewindL = viewlist.index(record) # charL matches
+						elif viewindR < 0 and searchname+charL in record[0][:searchlength]+record[0][-3]:
+							viewindR = viewlist.index(record) # charR matches
+						elif viewindName < 0 and searchname in record[0][:searchlength]:
+							viewindName = viewlist.index(record) # only basic name matches
+
+				if viewindLR > -1:
+					viewind = viewindLR
+				elif viewindL > -1:
+					viewind = viewindL
+				elif viewindR > -1:
+					viewind = viewindR
+				elif viewindName > -1:
+					viewind = viewindName
+				else:
+					viewind = 0
+
 	#-----------------------------------------------------------------------------
 	def findNext(direction):
 		global viewind
@@ -993,38 +1032,38 @@ def on_activate(app):
 		if menuitem.get_active():	
 			viewDim = 'All'
 			if not startup:
-				findMatch(); showImage()
+				findVmatch(); showImage()
 					
 	def tickView2D(menuitem):
 		global viewDim
 		if menuitem.get_active():
 			viewDim = '2D'
 			if not startup:
-				findMatch(); showImage()
+				findVmatch(); showImage()
 			
 	def tickView3D(menuitem):
 		global viewDim
 		if menuitem.get_active():
 			viewDim = '3D'
 			if not startup:
-				findMatch(); showImage()
+				findVmatch(); showImage()
 	
 	def tickViewTriptych(menuitem):
 		global viewDim
 		if menuitem.get_active():
 			viewDim = 'Triptych'
 			if not startup:
-				findMatch(); showImage()
+				findVmatch(); showImage()
 				
-	#-----------------#5#	
+	#-----------------#####
 	def tickViewAnaglyph(menuitem):
 		global viewType
 		if menuitem.get_active():	
 			viewType = viewType[:0] + 'A' + viewType[1:]
 		else:
 			viewType = viewType[:0] + '-' + viewType[1:]
-		if not startup:
-			findMatch(); showImage()									
+		if not startup:	
+			findFSmatch(); showImage()									
 
 	def tickViewSidebyside(menuitem):
 		global viewType
@@ -1033,7 +1072,7 @@ def on_activate(app):
 		else:
 			viewType = viewType[:1] + '-' + viewType[2:]
 		if not startup:
-			findMatch(); showImage()									
+			findFSmatch(); showImage()									
 										
 	def tickViewCrossover(menuitem):
 		global viewType
@@ -1042,7 +1081,7 @@ def on_activate(app):
 		else:
 			viewType = viewType[:2] + '-' + viewType[3:]
 		if not startup:
-			findMatch(); showImage()									
+			findFSmatch(); showImage()									
 
 	def tickViewNormal(menuitem):
 		global viewType
@@ -1051,7 +1090,7 @@ def on_activate(app):
 		else:
 			viewType = viewType[:3] + '-' + viewType[4:]
 		if not startup:
-			findMatch(); showImage()									
+			findFSmatch(); showImage()									
 
 	def tickViewPopout(menuitem):
 		global viewType
@@ -1060,7 +1099,7 @@ def on_activate(app):
 		else:
 			viewType = viewType[:4] + '-' + viewType[5:]
 		if not startup:
-			findMatch(); showImage()									
+			findFSmatch(); showImage()									
 
 	#-----------------			
 	def tickAnaglyph(menuitem):
@@ -1158,7 +1197,7 @@ def on_activate(app):
 		elif process == 'reset': # and pairlist == []
 			GbuttonProcess.set_label(_('Queue')); process = 'queue'; GbuttonProcess.props.tooltip_text = tipQueue
 			labelInfoTitle.set_markup('<b>' + _(scope) +' ' +_('Selection') +'</b>')
-			makeviewlist(False); findMatch(); showImage()
+			makeviewlist(False); findVmatch(); showImage()
 
 		# PROCESS
 		else: # Process as list is not empty
@@ -1681,7 +1720,7 @@ def on_activate(app):
 						or
 						(viewDim in ('All', '2D') and viewlist[viewind][2] == '2D')
 						):
-			findMatch()
+			findVmatch()
 	showImage()
 	
 	if os.path.isfile(workfold+runningfile):
