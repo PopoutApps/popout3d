@@ -1,5 +1,8 @@
 #! /usr/bin/python3
 
+#1.6.42 Changed all references to Preferences to Settings.
+#1.6.42 Removed Crowdin option.
+
 '''
 --------------------------------------------------------------------------------
 GNU GENERAL PUBLIC LICENSE GPLv3
@@ -57,7 +60,7 @@ except:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.41'  					# formatted for "About"
+version = '1.6.42'  					# formatted for "About"
 firstrun = True
 
 viewDim = 'All'								# which sort of images to show
@@ -91,20 +94,37 @@ runningfile = 'RUNNING'				# to show that multiprocessing is running
 stopfile  = 'STOP'						# to tell multiprocessing to stop
 process = 'queue'							# queue/process/reset
 
-urlForum = 'https://github.com/PopoutApps/popout3d/discussions'
-urlCrowdin = 'https://crowdin.com/project/popout3d'
+Mdatafold = '' 								# Meson read-only data files
+Mlocale = '' 									# Meson language files
+
+#1.6.42
+#urlForum = 'https://github.com/PopoutApps/popout3d/discussions'
+urlForum = 'https://popout3d.proboards.com/' 
+#urlCrowdin = 'https://crowdin.com/project/popout3d'
+##
 
 #-------------------------------------------------------------------------------
 '''
 Added by 'exalm':
 	$XDG_DATA_HOME defines the base directory relative to which user specific data files should be stored. 
 	If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used.
-	Done.
+
 	$XDG_CONFIG_HOME defines the base directory relative to which user specific configuration files should be stored. 
 	If $XDG_CONFIG_HOME is either not set or empty, a default equal to $HOME/.config should be used.
-	Not done.
-'''
 
+###exalm
+
+XDG standard
+OK	HOMEFOLD		for initial location for looking for photographs.
+OK 	CONFIGFOLD	for saving/loading the Settings file.			
+
+		WORKFOLD		for temporary images, and STOP and RUNNING control files.
+
+Try using XDG... folder, if that doesn't work use local folder, if that doesn't work, exit.
+'''								
+
+'''
+ALL DIRECTORIES REPLACED BY #1.6.42
 # home folder
 homefold = os.getenv('XDG_HOME')
 if homefold == None:
@@ -115,7 +135,6 @@ homefold = homefold + '/'
 workfold = homefold + '.popout3d/'
 if os.path.isdir(workfold):
 	shutil.rmtree(workfold, True)
-
 result = os.system('mkdir '+ workfold)
 if result != 0:
 	print('Cannot create work directory')
@@ -126,28 +145,79 @@ configfold = os.getenv('XDG_CONFIG_HOME')
 if configfold == None:
 	configfold = os.getenv('HOME') + '/.config/popout3d'
 configfold = configfold + '/'
-	
+'''
+
+#1.6.42 -----------------------------------------------------
+# home folder
+homefold = os.getenv('XDG_HOME')																	#try XDG_HOME
+if homefold == None:
+	homefold = os.getenv('HOME')																		#if not try HOME
+if homefold == None:
+	sys.exit('Cannot find homefold')																#if not, exit
+homefold = homefold + '/'
+
+#-------------------------------------------------------------
+# configuration folder for preference file
+configfold = os.getenv('XDG_CONFIG_HOME')									#try XDG_CONFIG_HOME
+if configfold == None:
+	if not os.path.exists(homefold + '.config'):						#if  not, try .config
+		sys.exit('Cannot find .config')												#if not, exit
+	else:
+		configfold = homefold + '.config/popout3d'
+		if not os.path.exists(configfold):										#.config exists find .config/popout3d
+			result = os.system('mkdir ' + configfold) 					#try making popout3d
+			if result !=0:
+				sys.exit('Cannot make .config/popout3d')					#cannot make popout3d so exit		
+configfold = configfold +'/'	
+
+#-------------------------------------------------------------
+# work folder for STOP and image files being processed
+workfold = os.getenv('XDG_DATA_HOME')																		#try XDG_DATA_HOME
+if workfold == None:
+	if not os.path.exists(homefold + '.local/share'):											#if  not, try .local/share
+		sys.exit('Cannot find .local/share')																#if not, exit
+	else:
+		if not os.path.exists(homefold + '.local/share/popout3d'):					#find ...popout3d
+			result = os.system('mkdir ' + homefold + '.local/share/popout3d')	#try making it
+			if result != 0:
+				sys.exit('Cannot make .local/share/popout3d')										#if not, exit			
+		workfold = homefold +'.local/share/popout3d/data'										#ok so set to ....data	
+
+if os.path.isdir(workfold):											#if it exists, remove workdir and its files
+	shutil.rmtree(workfold, True)
+
+result = os.system('mkdir ' + workfold)					#try making work directory
+if result !=0:
+	sys.exit('Cannot make work directory')			#cannot make work directory so exit			
+
+workfold = workfold +'/'	
+
+#Meson created directories------------------------------------
+'''
+Directories from Meson, if program isn't installed they won't exist. 
+To run it as a deb or RPM would require altering meson.build
+
+Mdatafold	source of read-only files like icons and grey image.
+Mlocale   source of language files
+'''
+
 # project folder (read-only) for dummy image and blank image
-if os.path.exists('/.flatpak-info'): #This is within the sandbox so can't be seen
-	datafold = '/app/share/popout3d/'
-	lang_path = '/app/share/locale/' 			# gettext will add {language}/LC_MESSAGES to lang_path
+if os.path.exists('/.flatpak-info'): # Is it a Flatpak? This is within the sandbox so can't be seen
+	Mdatafold = '/app/share/popout3d/'
+	Mlocale = '/app/share/locale/' 			# gettext will add {language}/LC_MESSAGES to Mlocale
 else: # no package for testing
-	datafold = '/home/chris/git/popout3d/'
-	lang_path = '/home/chris/git/locale/'	# gettext will add {language}/LC_MESSAGES to lang_path
+	Mdatafold = '/home/chris/git/popout3d/'
+	Mlocale = '/home/chris/git/locale/'	# gettext will add {language}/LC_MESSAGES to Mlocale
 
-
+#Localisation-------------------------------------------------
 locale.setlocale(locale.LC_ALL, '') # For words in GTK4 itself, locale to users default language (otherwise might be C/POSIX locale)
-language = locale.getlocale()[0] 		# get OS language for program's words
-
-lang = gettext.translation('popout3d', localedir=lang_path, languages=[language], fallback=True)
+# To test GTK4 built-in words, use this in Bash: export LC_ALL=nl_NL.UTF-8
+language = locale.getlocale()[0]
+#language = 'nl_NL' # test
+lang = gettext.translation('popout3d', localedir=Mlocale, languages=[language], fallback=True)
 _ = lang.gettext
 
-#(os.getcwd())
-#('homefold = ', homefold)
-#('workfold = ', workfold)
-#('configfold = ', configfold)
-#('datafold = ', datafold)
-
+#-------------------------------------------------------------------------------
 # tooltips
 tipDelete			= _('Delete a 3D image.')
 tipQueue			= _('Make a queue of 3D images from the files selected by Folder or File.')
@@ -254,7 +324,7 @@ Mobile mobile phones from one manufacturer are suspected of producing 16:9 photo
 
 The 3D images won't have valid EXIF tags.
 
-Preferences from previous versions of the program are not loaded.
+Settings from previous versions of the program are not loaded.
 
 If you can't remember which image was left and which was right, create a 3D image as usual. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image.
 
@@ -305,7 +375,7 @@ def on_activate(app):
 	def ask(widget, response, param):
 		global viewind, process
 		if response == Gtk.ResponseType.OK:
-			if param == 'preferences':
+			if param == 'settings':
 				with open(configfold + preffile, 'w') as fn:
 					try:
 						fn.write(version+'\n')
@@ -351,12 +421,12 @@ def on_activate(app):
 		message.connect('response', ask, 'delete')
 		message.set_visible(True)#####message.show()
 	
-	def showPreferences(action, button):
+	def showSettings(action, button):
 		message = Gtk.MessageDialog(title = _('Are you sure?'), text = _('This will save your current settings as the defaults.'))
 		message.set_transient_for(win); message.set_modal(win)
 		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('OK'), Gtk.ResponseType.OK)
 		message.set_default_response(Gtk.ResponseType.OK)
-		message.connect('response', ask, 'preferences')
+		message.connect('response', ask, 'settings')
 		message.set_visible(True)#####message.show()
 		
 	def showAbout(action, button):
@@ -385,20 +455,20 @@ def on_activate(app):
 	def	showForum(action, button):
 		result = webbrowser.open(urlForum)
 		
-	def	showLocale(action, button):
-		result = webbrowser.open(urlCrowdin)
+	#def	showLocale(action, button):
+	#	result = webbrowser.open(urlCrowdin)
 		
-	def readpreferences():
+	def readSettings():
 		global version, myfold, myfile, myext, formatcode, stylecode, viewDim, scope, viewType, firstrun
 		# local okpref, okcol, ver, i
 		# Preference file is not present when program is installed, so shows whether this is the first run.
 	
-		# create preferences array
+		# create settings array
 		prefdata = []
 		for i in range(8):
 			prefdata.append('')
 
-		# load preferences file, if file not found or is wrong version skip to end
+		# load settings file, if file not found or is wrong version skip to end
 		# if any fields are bad, replace with default
 		okpref = True
 		try:
@@ -786,11 +856,11 @@ def on_activate(app):
 					elif orientationL == '8': #top pointing left so rotate 90 clockwise
 						pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameL+'.'+newextL), 90)
 					elif orientationL == 'notfound':
-						pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
+						pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
 					else:
 						pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameL+'.'+newextL)
 				else:
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
+					pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
 
 				imageL = Gtk.Picture.new_for_pixbuf(pixbuf)
 				imageL.props.hexpand = True	
@@ -810,11 +880,11 @@ def on_activate(app):
 					elif orientationR == '8': #top pointing left so rotate 90 clockwise
 						pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameR+'.'+newextR), 90)
 					elif orientationR == 'notfound':
-						pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
+						pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
 					else:
 						pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameR+'.'+newextR)
 				else:
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile) 
+					pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile) 
 
 				imageR = Gtk.Picture.new_for_pixbuf(pixbuf)
 				imageR.props.hexpand = True	
@@ -834,14 +904,14 @@ def on_activate(app):
 				elif orientation1 == '8': #top pointing left so rotate 90 clockwise
 					pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file(myfold+newfilename1+'.'+newext1), 90)
 				elif orientation1 == 'notfound': # file missing #redundant
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
+					pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
 				else: #already upright or could not be determined
 					pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilename1+'.'+newext1)
 			else: # not found
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
 
 		else:
-			pixbuf = GdkPixbuf.Pixbuf.new_from_file(datafold+dummyfile)
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
 
 		image1 = Gtk.Picture.new_for_pixbuf(pixbuf)
 		image1.props.hexpand = True; image1.props.vexpand = True
@@ -1613,9 +1683,9 @@ def on_activate(app):
 	#-----------------------------------------------------------------------------	
 	# main stripey menu
 	menu2 = Gio.Menu.new()
-	menu2.append(_('Preferences'), 'win.menuitemPreferences')
-	menu2.append(_('Forum'), 'win.menuitemForum')
-	menu2.append(_('Improve a Translation on Crowdin'), 'win.menuitemLocale')
+	menu2.append(_('Save Settings'), 'win.menuitemSettings')
+	menu2.append(_('Internet Forum'), 'win.menuitemForum')
+	#menu2.append(_('Improve a Translation on Crowdin'), 'win.menuitemLocale')
 	menu2.append(_('Help'), 'win.menuitemHelp')
 	menu2.append(_('About Popout3D'), 'win.menuitemAbout')
 
@@ -1631,9 +1701,9 @@ def on_activate(app):
 	win.header.pack_end(menuStripey)
 	
 	# add actions to main stripey menu options
-	# preferences
-	action = Gio.SimpleAction.new('menuitemPreferences')
-	action.connect('activate', showPreferences)
+	# settings
+	action = Gio.SimpleAction.new('menuitemSettings')
+	action.connect('activate', showSettings)
 	win.add_action(action)
 	
 	# help
@@ -1652,12 +1722,12 @@ def on_activate(app):
 	win.add_action(action)
 
 	# locale
-	action = Gio.SimpleAction.new('menuitemLocale')
-	action.connect('activate', showLocale)
-	win.add_action(action)
+	#action = Gio.SimpleAction.new('menuitemLocale')
+	#action.connect('activate', showLocale)
+	#win.add_action(action)
 
 	#-----------------------------------------------------------------------------
-	readpreferences()
+	readSettings()
 
 	if scope == 'Folder':
 		#win.set_title(version + '			Folder: ' + myfold)
