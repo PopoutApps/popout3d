@@ -10,11 +10,9 @@
   <content_rating type="oars-1.0" />
   <releases>
     <release date="2024-02-25" version="1.6.42">
-      <ul>  
-        <li>Corrected directories</li>
-        <li>Removed translation link</li>        
-        <li>Updated forum link</li>        
-      </ul>
+      <p>Corrected directories</p>
+      <p>Removed translation link</p>        
+      <p>Updated forum link</p>        
     </release> 
   </releases>
   <description>
