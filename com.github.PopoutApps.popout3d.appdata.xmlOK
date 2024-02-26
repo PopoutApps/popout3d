@@ -6,18 +6,14 @@
   <project_license>GPL-3.0-or-later</project_license>  
   <name>Popout3D</name>
   <summary>Creates 3D images from photographs taken with an ordinary camera.</summary>
-  <developer_name>PopoutApps</developer_name>
+	<developer_name>PopoutApps</developer_name>
   <content_rating type="oars-1.0" />
   <releases>
     <release date="2024-02-25" version="1.6.42">
-      <description>
-        <p>
-          <ul>  
-            <li>Corrected directories.</li>
-            <li>Removed translation link.</li>        
-            <li>Updated forum link.</li>        
-          </ul>
-        </p>
+			<description>
+        <p>Corrected directories.</p>
+        <p>Removed translation link.</p>        
+        <p>Updated forum link.</p>        
       </description>
     </release> 
   </releases>
