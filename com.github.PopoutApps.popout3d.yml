@@ -1,0 +1,200 @@
+app-id: com.github.PopoutApps.popout3d
+runtime: org.gnome.Platform
+#runtime-version: "41" Up to V1.5.3
+#runtime-version: "43" #From V1.5.31
+runtime-version: "45" #From V1.6.41
+sdk: org.gnome.Sdk
+
+command: popout3d
+copy-icon: true
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --filesystem=home
+  - --device=dri #1.6.01 OpenGL rendering
+
+modules:
+  - name: python3-pillow
+    buildsystem: simple
+    build-commands:
+      # - pip3 install --no-index --find-links="file://${PWD}" --prefix=${FLATPAK_DEST} Pillow #ORIGINAL
+      - pip3 install . --prefix=${FLATPAK_DEST}
+    sources:
+      #- type: file #ORIGINAL
+        #    url: https://files.pythonhosted.org/packages/3c/7e/443be24431324bd34d22dd9d11cc845d995bcd3b500676bcf23142756975/Pillow-5.4.1.tar.gz
+        #    sha256: 5233664eadfa342c639b9b9977190d64ad7aca4edc51a966394d7e08e7f38a9f
+        # 1.5.3 for later version of pillow
+      - type: archive
+        url: https://github.com/python-pillow/Pillow/archive/refs/tags/8.3.2.tar.gz
+        sha256: 8252b6b514aed2743abb5b7259b3253d6c4bf86902b9c5acd33fe79d24ec7b2f
+
+  # align_image_stack deps
+  - shared-modules/glew/glew.json
+  - shared-modules/glu/glu-9.json
+
+  - name: wxWidgets
+    #cleanup: #1.5.3 tautology
+    #  - /bin
+    #  - /share/bakefile << could add this back in
+    config-opts:
+      - --with-opengl
+      - --with-libjpeg
+      - --with-libtiff
+      - --with-libpng
+      - --with-zlib
+      - --disable-sdltest
+      - --enable-unicode
+      - --enable-display
+      - --enable-propgrid
+      #- --disable-webkit 1.5.2
+      - --disable-webview
+      - --disable-webviewwebkit
+      - --with-expat=builtin
+      - --with-libiconv=/usr
+    build-options:
+      cxxflags: "-std=c++0x"
+    sources:
+      #- type: archive
+      #  url: https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.4/wxWidgets-3.0.4.tar.bz2
+      #  sha256: 96157f988d261b7368e5340afa1a0cad943768f35929c22841f62c25b17bf7f0
+      # 1.5.2
+      #- type: git
+      #  tag: v3.1.5
+      #  url: https://github.com/wxWidgets/wxWidgets
+      # from 1.6.01
+      - type: archive
+        url: https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2/wxWidgets-3.2.2.tar.bz2
+        sha256: 8edf18672b7bc0996ee6b7caa2bee017a9be604aad1ee471e243df7471f5db5d
+    cleanup:
+      - /bin
+      - /lib
+      - /doc
+      - /share
+
+  - name: libpano13
+    buildsystem: cmake # cmake-ninja doesn't work OK with libpano13 and __FILE__ macro in its sources
+    builddir: true
+    sources:
+      - type: archive
+        url: https://downloads.sourceforge.net/project/panotools/libpano13/libpano13-2.9.19/libpano13-2.9.19.tar.gz
+        sha256: 037357383978341dea8f572a5d2a0876c5ab0a83dffda431bd393357e91d95a8
+        # 1.5.2 couldnt get later one to work
+        #url: https://sourceforge.net/projects/panotools/files/libpano13/libpano13-2.9.20/libpano13-2.9.20.tar.gz/download
+        #sha256: 3b532836c37b8cd75cd2227fd9207f7aca3fdcbbd1cce3b9749f056a10229b89
+    cleanup:
+      - /bin
+      - /share
+
+  - name: ilmbase
+    build-options:
+      cxxflags: -std=c++14
+    config-opts:
+      - --disable-static
+    sources:
+      - type: archive
+        url: https://download.savannah.nongnu.org/releases/openexr/ilmbase-2.2.1.tar.gz
+        sha256: cac206e63be68136ef556c2b555df659f45098c159ce24804e9d5e9e0286609e
+        #latest
+
+  - name: openexr
+    build-options:
+      cxxflags: -std=c++14
+    config-opts:
+      - --disable-static
+    sources:
+      - type: archive
+        url: https://download.savannah.nongnu.org/releases/openexr/openexr-2.2.1.tar.gz
+        sha256: 8f9a5af6131583404261931d9a5c83de0a425cb4b8b25ddab2b169fbf113aecd
+        #1.5.2 still latest
+    cleanup:
+      - /bin
+      - /share/doc
+
+  - name: vigra
+    buildsystem: cmake-ninja
+    config-opts:
+       - -DWITH_OPENEXR=ON
+    sources:
+      - type: archive
+        url: https://github.com/ukoethe/vigra/archive/Version-1-11-1.tar.gz
+        sha256: b2718250d28baf1932fcbe8e30f7e4d146e751ad0e726e375a72a0cdb4e3250e
+        # 1.5.2, 1.5.4 still latest
+    cleanup:
+      - /bin
+      - /doc
+      - /lib/vigra/
+      - /share
+
+  - name: exiv2
+    buildsystem: cmake-ninja
+    sources:
+      # 0.5.2-2 old not available - type: git
+      #  url: https://github.com/Exiv2/exiv2/
+      #  commit: e7ffd83af29187190da7f98dcbca8a4d70e19582
+      #- type: archive #1.5.2 # Now gives 404 error
+      #  url: http://www.exiv2.org/builds/exiv2-0.27.5-Source.tar.gz
+      #  sha256: 35a58618ab236a901ca4928b0ad8b31007ebdc0386d904409d825024e45ea6e2
+      - type: git
+        tag: v0.27.5
+        url: https://github.com/Exiv2/exiv2.git        
+    cleanup:
+      - /bin
+      - /share/man
+
+  - name: boost
+    buildsystem: simple
+    build-commands:
+      - "./bootstrap.sh --prefix=/app --with-libraries=atomic,chrono,date_time,filesystem,iostreams,program_options,system,thread"
+      - "./b2 -j $FLATPAK_BUILDER_N_JOBS install"
+    sources:
+      - type: archive
+        # 0.5.2-2 old not available url: https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2
+        url: https://boostorg.jfrog.io/artifactory/main/release/1.68.0/source/boost_1_68_0.tar.bz2
+        sha256: 7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7
+
+  - name: align_image_stack
+    buildsystem: cmake-ninja
+    builddir: true
+    sources:
+      #- type: file
+      #  url: https://downloads.sourceforge.net/project/hugin/hugin/hugin-2018.0/hugin-2018.0.0.tar.bz2
+      #  sha256: d3af0d066ac50e3bb243a175a64ecda136d87178419457e8822e11bcf0e565cb
+      # 1.5.3
+      - type: archive
+        url: https://sourceforge.net/projects/hugin/files/hugin/hugin-2020.0/hugin-2020.0.0.tar.bz2
+        sha256: 283e7601259a7914cb075333424410928a439dc5f84216f33e2fe55501fbcacb
+
+    cleanup:
+      - /bin/autooptimiser
+      - /bin/calibrate_lens_gui
+      - /bin/celeste_standalone
+      - /bin/checkpto
+      - /bin/cpclean
+      - /bin/cpfind
+      - /bin/deghosting_mask
+      - /bin/fulla
+      - /bin/geocpset
+      - /bin/hugin*
+      - /bin/icpfind
+      - /bin/linefind
+      - /bin/nona
+      - /bin/pano*
+      - /bin/PT*
+      - /bin/pto_*
+      - /bin/tca_correct
+      - /bin/verdandi
+      - /bin/vig_optimize
+      - /lib/libceleste*
+      - /lib/libhuginbaswwx*
+      - /lib/libicpfindlib*
+      - /lib/liblocalfeatures*
+      - /share
+
+  - name: popout3d
+    buildsystem: meson
+    sources:
+    - type: git
+      tag: main
+      url: https://github.com/PopoutApps/popout3d
+
