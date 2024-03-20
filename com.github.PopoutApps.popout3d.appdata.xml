@@ -32,9 +32,7 @@
       <image>https://raw.githubusercontent.com/PopoutApps/popout3d/main/screenshot.png</image>
     </screenshot>
   </screenshots>
-  <urls>
-    <url type="homepage">https://popout3d.proboards.com/</url>
-    <url type="git">https://github.com/PopoutApps/popout3d</url>
-  </urls>
+  <url type="homepage">https://popout3d.proboards.com/</url>
+  <url type="git">https://github.com/PopoutApps/popout3d</url>
   </component>
   
