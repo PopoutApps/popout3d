@@ -9,14 +9,12 @@
   <developer_name>PopoutApps</developer_name>
   <content_rating type="oars-1.0" />
   <releases>
-    <release date="2024-02-25" version="1.6.42">
+    <release date="2024-03-20" version="1.6.42">
       <description>
         <p>
-          <ul>  
-            <li>Corrected directories.</li>
-            <li>Removed translation link.</li>        
-            <li>Updated forum link.</li>        
-          </ul>
+          Corrected directories.
+          Removed translation link.
+          Updated forum link.        
         </p>
       </description>
     </release> 
@@ -34,5 +32,9 @@
       <image>https://raw.githubusercontent.com/PopoutApps/popout3d/main/screenshot.png</image>
     </screenshot>
   </screenshots>
-  <url type="homepage">https://github.com/PopoutApps/popout3d</url>
+  <urls>
+    <url type="homepage">https://popout3d.proboards.com/</url>
+    <url type="git">https://github.com/PopoutApps/popout3d</url>
+  </urls>
   </component>
+  
