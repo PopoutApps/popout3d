@@ -1,6 +1,6 @@
 project(
   'popout3d',
-  version: '1.6.42',
+  version: '1.6.43',
   meson_version: '>= 0.46.0'
 )
 
@@ -18,7 +18,7 @@ configure_file(
   install_dir: bindir
 )
 
-# dummy image and logo for About
+# dummy image, logo for About, language file
 data_files = [
   'com.github.PopoutApps.popout3d.png',
   'dummy.png'

@@ -1,8 +1,5 @@
 #! /usr/bin/python3
 
-#1.6.42 Changed all references to Preferences to Settings.
-#1.6.42 Removed Crowdin option.
-
 '''
 --------------------------------------------------------------------------------
 GNU GENERAL PUBLIC LICENSE GPLv3
@@ -26,6 +23,9 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 
 # Also depends on hugin_tools for align_image_stack.
 import sys, os, shutil, shlex, glob, subprocess, multiprocessing
+
+import warnings #43 to suppress GTK deprecation warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from PIL import Image, ImageOps, __version__
 from PIL.ExifTags import TAGS
@@ -60,48 +60,44 @@ except:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.42'  					# formatted for "About"
+version = '1.6.43'  						# formatted for "About"
 firstrun = True
 
-viewDim = 'All'								# which sort of images to show
-viewType = 'ASCNP'						# which type of 3D images to show
-viewlist = []									# list of images to view
-viewind = 0										# index of image to view
+viewDim = 'All'									# which sort of images to show
+viewType = 'ASCNP'							# which type of 3D images to show
+viewlist = []										# list of images to view
+viewind = 0											# index of image to view
 infolist = ''
 
-dummyfile = 'dummy.png'				# grey image to display when one is missing.
-blankfile = 'blank.png'				# blank image to display for clearing.
-preffile = 'popout3d.dat'			# user preference file
-logofile = 'popout3d.png'			# logo for About
-myfile = ''										# current file
-myext = ''										# current extension
+dummyfile = 'dummy.png'					# grey image to display when one is missing.
+blankfile = 'blank.png'					# blank image to display for clearing.
+settingsfile = 'popout3d.dat'		# settings file
+logofile = 'popout3d.png'				# logo for About
+myfile = ''											# current file
+myext = ''											# current extension
 # myfold mustn't be defined
-scope = 'Folder'							# whether dealing with file set or folder
+scope = 'Folder'								# whether dealing with file set or folder
 
-formatcode = 'A'							# first letter of format
-stylecode = 'N'								# first letter of style
-pairlist = []									# list of pairs to process
-warnings = ''									# list of Processed warnings
+formatcode = 'A'								# first letter of format
+stylecode = 'N'									# first letter of style
+pairlist = []										# list of pairs to process
+warnings = ''										# list of Processed warnings
 
-okformat = ['A','S','C']			# Anaglyph/Side-by-Side/Crossover
-okstyle	= ['N','P'] 					# Normal/Popout
+okformat = ['A','S','C']				# Anaglyph/Side-by-Side/Crossover
+okstyle	= ['N','P'] 						# Normal/Popout
 okchar = ['0','1','2','3','4','5','6','7','8','9','L','R'] #last char in 2D filename
 okext	= ['jpg','JPG','jpeg','JPEG','png','PNG','tif','TIF','tiff','TIFF']
 tifext	= ['tif','TIF','tiff','TIFF']
 
-processlist = False						# whether to show only recently processed files 32X 
-runningfile = 'RUNNING'				# to show that multiprocessing is running
-stopfile  = 'STOP'						# to tell multiprocessing to stop
-process = 'queue'							# queue/process/reset
-
-Mdatafold = '' 								# Meson read-only data files
-Mlocale = '' 									# Meson language files
-
-#1.6.42
-#urlForum = 'https://github.com/PopoutApps/popout3d/discussions'
+processlist = False							# whether to show only recently processed files 32X 
+runningfile = 'RUNNING'					# to show that multiprocessing is running
+stopfile  = 'STOP'							# to tell multiprocessing to stop
+process = 'queue'								# queue/process/reset
+retain = False									# whether to save aligned L and R images #43
+balance = 1											# fudge factor for left right balance in Anaglyphs #43
+Mdatafold = '' 									# Meson read-only data files
+Mlocale = '' 										# Meson language files
 urlForum = 'https://popout3d.proboards.com/' 
-#urlCrowdin = 'https://crowdin.com/project/popout3d'
-##
 
 #-------------------------------------------------------------------------------
 '''
@@ -112,40 +108,16 @@ Added by 'exalm':
 	$XDG_CONFIG_HOME defines the base directory relative to which user specific configuration files should be stored. 
 	If $XDG_CONFIG_HOME is either not set or empty, a default equal to $HOME/.config should be used.
 
-###exalm
+exalm
 
 XDG standard
 OK	HOMEFOLD		for initial location for looking for photographs.
-OK 	CONFIGFOLD	for saving/loading the Settings file.			
+OK 	CONFIGFOLD	for saving/loading the Config file.			
 
 		WORKFOLD		for temporary images, and STOP and RUNNING control files.
 
 Try using XDG... folder, if that doesn't work use local folder, if that doesn't work, exit.
 '''								
-
-'''
-ALL DIRECTORIES REPLACED BY #1.6.42
-# home folder
-homefold = os.getenv('XDG_HOME')
-if homefold == None:
-	homefold = os.getenv('HOME')
-homefold = homefold + '/'
-
-# work folder for processing files
-workfold = homefold + '.popout3d/'
-if os.path.isdir(workfold):
-	shutil.rmtree(workfold, True)
-result = os.system('mkdir '+ workfold)
-if result != 0:
-	print('Cannot create work directory')
-	sys.exit(result)
-
-# config folder for preference file
-configfold = os.getenv('XDG_CONFIG_HOME')
-if configfold == None:
-	configfold = os.getenv('HOME') + '/.config/popout3d'
-configfold = configfold + '/'
-'''
 
 #1.6.42 -----------------------------------------------------
 # home folder
@@ -165,9 +137,9 @@ if configfold == None:
 	else:
 		configfold = homefold + '.config/popout3d'
 		if not os.path.exists(configfold):										#.config exists find .config/popout3d
-			result = os.system('mkdir ' + configfold) 					#try making popout3d
+			result = os.system('mkdir ' + configfold) 					#try making .config/popout3d
 			if result !=0:
-				sys.exit('Cannot make .config/popout3d')					#cannot make popout3d so exit		
+				sys.exit('Cannot make .config/popout3d')					#cannot make .config/popout3d so exit		
 configfold = configfold +'/'	
 
 #-------------------------------------------------------------
@@ -200,53 +172,36 @@ To run it as a deb or RPM would require altering meson.build
 Mdatafold	source of read-only files like icons and grey image.
 Mlocale   source of language files
 '''
-
-# project folder (read-only) for dummy image and blank image
+# Mdtafold is project folder (read-only) for dummy image and blank image
+# Mlocale is localisation folder for translation files
 if os.path.exists('/.flatpak-info'): # Is it a Flatpak? This is within the sandbox so can't be seen
 	Mdatafold = '/app/share/popout3d/'
 	Mlocale = '/app/share/locale/' 			# gettext will add {language}/LC_MESSAGES to Mlocale
 else: # no package for testing
 	Mdatafold = '/home/chris/git/popout3d/'
 	Mlocale = '/home/chris/git/locale/'	# gettext will add {language}/LC_MESSAGES to Mlocale
-
-#Localisation-------------------------------------------------
+	
+#locale-----------------------------------------------------
 locale.setlocale(locale.LC_ALL, '') # For words in GTK4 itself, locale to users default language (otherwise might be C/POSIX locale)
 # To test GTK4 built-in words, use this in Bash: export LC_ALL=nl_NL.UTF-8
 language = locale.getlocale()[0]
 #language = 'nl_NL' # test
+#language = 'de_DE' # test
 lang = gettext.translation('popout3d', localedir=Mlocale, languages=[language], fallback=True)
 _ = lang.gettext
 
-#-------------------------------------------------------------------------------
-# tooltips
-tipDelete			= _('Delete a 3D image.')
-tipQueue			= _('Make a queue of 3D images from the files selected by Folder or File.')
-tipProcess		= _('Create the 3D images shown in the queue.')
-tipReset			= _('Clear the list of processed images and show the list selected by Folder or File.')
-tipNext				= _('Show next image.')
-tipPrev				= _('Show previous image.')
-tipOpen				= _('Folder: Select a folder. File: Select a 2D image file.')
- 
-tip2D					= _('Show only 2D images.')
-tipTriptych		= _('Show 3D images above the 2D images they came from.')
-tip3D					= _('Show only 3D images.')
-tipAll				= _('Show all images.')
-tipAnaglyph		= _('A 3D image with the left-hand image red and the right-hand image cyan.')
-tipSidebyside	= _('A 3D image with the left-hand image on the left and the right-hand image on the right.')
-tipCrossover	= _('A 3D image with the left-hand image on the right and the right-hand image on the left.')
-tipNormal 		= _('A normal 3D image.')
-tipPopout			= _('A 3D image which may appear to stand out in front of the screen.')
+# Help pages -------------------------------------------------------------------
+helpPage = []
 
-# Help pages
 # Basics -----------------------------------------------------------------------
-label1BasicsTake = '''Take two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same thing and take another. Copy them to your PC, then rename them so that they have exactly the same name, but add an 'L' at the end of the left-hand one, add an 'R' to the end of the right-hand one. For example photoL.JPG and photoR.JPG.
+helpPage.append(_('''Take two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same thing and take another. Copy them to your PC, then rename them so that they have exactly the same name, but add an "L" at the end of the left-hand one, add an "R" to the end of the right-hand one. For example photoL.JPG and photoR.JPG.
 
 Open Popout3D and select one of these photos with Open>File. Click Queue to see which 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
 
-You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without the goggles.'''
+You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without the goggles.'''))
 
 # Source Files -----------------------------------------------------------------
-label2SourceChoose = '''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right but pointing at the same thing, and take another. Always take them in sequence from left to right, so you don't get them mixed up. Popout3D may not be able to read/write image files on your camera or mobile phone and the 3D images you create will need extra space, so it's best to copy your original photos onto your PC. It is also easier to rename the photos on your PC. Rename them so that they have exactly the same name, but add an 'L' at the end of the left-hand one, and add an 'R' to the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the spacing right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
+helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right but pointing at the same thing, and take another. Always take them in sequence from left to right, so you don't get them mixed up. Popout3D may not be able to read/write image files on your camera or mobile phone and the 3D images you create will need extra space, so it's best to copy your original photos onto your PC. It is also easier to rename the photos on your PC. Rename them so that they have exactly the same name, but add an "L" at the end of the left-hand one, and add an "R" to the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the spacing right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
 
 Each set of images (all those for the same subject) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
 
@@ -259,14 +214,14 @@ A picture with objects at varying distances results in a convincing effect. Dist
 Notes
 Some images are too difficult for the aligning software, and the resulting image is unusable.
 
-Avoid images with all red or all cyan objects. They will look odd as they only appear in one eye.
+For Anaglyph 3D avoid images with all red or all cyan objects. They will look odd as they only appear in one eye.
 
 Because the 2D images must have exactly the same width and height in pixels, editing them is difficult. It can be done with a photo editor like rawTherapee, which shows you the size that the edited image will have, so you can make them match. It is easier to edit the 3D image, although you can't crop Side-By-Side or Crossover ones.
 
-Nearby objects can cause strange effects when the camera's depth of field is high. A shorter exposure will reduce the depth of field.'''
+Nearby objects can cause strange effects when the camera's depth of field is high. A shorter exposure will reduce the depth of field.'''))
 
 # File Selection----------------------------------------------------------------
-label3FileFile = '''File
+helpPage.append(_('''File
 To process a single set of images which are all for the same subject, first use Open>File to choose any file from the set.
 
 scenery1.jpg
@@ -280,17 +235,17 @@ Selecting any of these files will prepare you to process all of them. The progra
 4 originals produce 6 3D images
 5 originals produce 10 3D images
 
-All the 3D images get the same filename (except the final character) and extension as the originals, plus two digits and a letter each for the format and style. These examples are 'Anaglyph' format with 'Normal' style:
+All the 3D images get the same filename (except the final character) and extension as the originals, plus two digits and a letter each for the format and style. These examples are "Anaglyph" format with "Normal" style:
 
 scenery12AN.jpg was made with scenery1.jpg for the left image and scenery2.jpg for the right.
 scenery13AN.jpg was made with scenery1.jpg for the left image and scenery3.jpg for the right.
 With images ending in L and R you would get sceneryLRAN.jpg.
 
 Folder:
-To process all the image sets in a folder, first use Open>Folder to choose the folder with the sets of images.'''
+To process all the image sets in a folder, first use Open>Folder to choose the folder with the sets of images.'''))
 
 # Options for 3D Images --------------------------------------------------------
-label4OptionsThe = '''The format of the 3D image can may be:
+helpPage.append(_('''The format of the 3D image may be:
 
 Anaglyph
 A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
@@ -307,10 +262,13 @@ Normal
 A normal 3D image with the front of the picture level with the screen.
 
 Popout
-A 'popout' image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".'''
+A "popout" image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".
+
+Aligned 2D images
+The processing creates aligned versions of left and right images, which are then merged into a 3D image. These two images are only temporary. If you want to try your own method of creating and displaying 3D images, you can save these two images by selecting "Aligned 2D Images > Save". They have names like PhotoL(LRSN).tif, the "PhotoL" refers to the original left-hand image. The "-LRSN" refers to the 3D image for which they were created. The "S" is irrelevant, but the "P" indicates that you a 3D image you make from it will be a popout one.'''))
 
 # Processing -------------------------------------------------------------------
-label5ProcessingFor = '''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
+helpPage.append(_('''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
 
 An existing 3D image file will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing 3D image.
 
@@ -328,10 +286,10 @@ Settings from previous versions of the program are not loaded.
 
 If you can't remember which image was left and which was right, create a 3D image as usual. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image.
 
-You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''
+You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''))
 
 # View -------------------------------------------------------------------------
-label6ViewScroll = '''Scroll backwards and forwards through the images using < and >.
+helpPage.append(_('''Scroll backwards and forwards through the images using < and >.
 
 All
 All the images in the chosen folder or set which follow the naming rules will be shown.
@@ -352,7 +310,29 @@ Delete
 If a 3D image is being displayed you may delete it. To ensure that you don't lose original images, 2D images cannot be deleted from within Popout3D. You could of course delete them using your file manager.
 
 Notes
-You may need to view 3D images from further away than you might expect.'''
+You may need to view 3D images from further away than you might expect.'''))
+
+#-------------------------------------------------------------------------------
+# tooltips
+tipDelete			= _('Delete a 3D image')
+tipQueue			= _('Make a queue of 3D images from the files selected by Folder or File')
+tipProcess		= _('Create the 3D images shown in the queue')
+tipReset			= _('Clear the list of processed images and show the list selected by Folder or File')
+tipNext				= _('Show next image')
+tipPrev				= _('Show previous image')
+tipOpen				= _('Select a folder or file')
+tipStripey		= _('Menu') 
+
+tip2D					= _('Show only 2D images')
+tipTriptych		= _('Show 3D images above the 2D images they came from')
+tip3D					= _('Show only 3D images')
+tipAll				= _('Show all images')
+tipAnaglyph		= _('A 3D image with the left-hand image red and the right-hand image cyan')
+tipSidebyside	= _('A 3D image with the left-hand image on the left and the right-hand image on the right')
+tipCrossover	= _('A 3D image with the left-hand image on the right and the right-hand image on the left')
+tipNormal 		= _('A normal 3D image')
+tipPopout			= _('A 3D image which may appear to stand out in front of the screen')
+tipRetain			= _('Save the aligned 2D images which were created by align-image-stack') #43
 
 #===============================================================================
 def on_close_request(app): # When window is closed with X
@@ -372,11 +352,27 @@ def on_activate(app):
 	win.connect('close-request', on_close_request)
 
 	#-----------------------------------------------------------------------------
+	def greyout(state): #43
+		if state:
+			GtickViewAnaglyph.set_sensitive(False)
+			GtickViewSidebyside.set_sensitive(False)
+			GtickViewCrossover.set_sensitive(False)
+			GtickViewNormal.set_sensitive(False)
+			GtickViewPopout.set_sensitive(False)
+			#GbuttonDelete.set_sensitive(False)
+		else:
+			GtickViewAnaglyph.set_sensitive(True)
+			GtickViewSidebyside.set_sensitive(True)
+			GtickViewCrossover.set_sensitive(True)
+			GtickViewNormal.set_sensitive(True)
+			GtickViewPopout.set_sensitive(True)
+			#GbuttonDelete.set_sensitive(True)
+
 	def ask(widget, response, param):
 		global viewind, process
 		if response == Gtk.ResponseType.OK:
 			if param == 'settings':
-				with open(configfold + preffile, 'w') as fn:
+				with open(configfold + settingsfile, 'w') as fn:
 					try:
 						fn.write(version+'\n')
 						fn.write(myfold+'\n')
@@ -386,15 +382,20 @@ def on_activate(app):
 						fn.write(stylecode+'\n')
 						fn.write(viewDim+'\n')
 						fn.write(viewType+'\n')
+						if retain:
+							fn.write('True\n') #43
+						else:
+							fn.write('False\n') #43
+						fn.write(str(balance)+'\n') #43
 					except:
-						print('Failed to write preference file.')
+						print('Failed to write preference file')
 			elif param == 'delete':
 				ok = True 
 				try: 
 					os.remove(myfold + viewlist[viewind][0]+'.'+viewlist[viewind][1])
 				except:
 					ok = False
-					showInfo(_('File not found.'))
+					showInfo(_('File not found'))
 				if ok:
 					if process == 'reset':
 						labelInfoTitle.set_markup('<b>' + _(scope) + ' ' + _('Selection') +'</b>')
@@ -410,39 +411,39 @@ def on_activate(app):
 		message.set_transient_for(win); message.set_modal(win)
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, None)
-		message.set_visible(True) #####message.show()
+		message.set_visible(True)
 
 	def showDelete():
 		message = Gtk.MessageDialog(title = _('Are you sure?'), 
 			text = _('This will delete') +' ' + viewlist[viewind][0]+'.'+viewlist[viewind][1])
-		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('OK'), Gtk.ResponseType.OK)
+		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Delete'), Gtk.ResponseType.OK)  #43
 		message.set_transient_for(win); message.set_modal(win)		
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, 'delete')
-		message.set_visible(True)#####message.show()
+		message.set_visible(True)
 	
 	def showSettings(action, button):
-		message = Gtk.MessageDialog(title = _('Are you sure?'), text = _('This will save your current settings as the defaults.'))
+		message = Gtk.MessageDialog(title = _('Are you sure?'), text = _('This will save your current settings as the defaults'))
 		message.set_transient_for(win); message.set_modal(win)
-		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('OK'), Gtk.ResponseType.OK)
+		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Save'), Gtk.ResponseType.OK) #43
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, 'settings')
-		message.set_visible(True)#####message.show()
+		message.set_visible(True)
 		
 	def showAbout(action, button):
 		message = Gtk.AboutDialog(transient_for=win, modal=True)
 		message.set_logo_icon_name('com.github.PopoutApps.popout3d')
 		message.set_program_name('Popout3D')
 		message.set_version(version)
-		message.set_comments(_('Create a 3D image from ordinary photographs.'))
+		message.set_comments(_('Create a 3D image from ordinary photographs'))
 		message.set_website_label('Popout3D ' + _('on') + ' GitHub')
 		message.set_website('https://github.com/PopoutApps/popout3d')
 		message.set_copyright(_('Copyright') + ' 2022, 2023 Chris Rogers')
 		message.set_license_type(Gtk.License.GPL_3_0)
 		message.set_authors(['PopoutApps'])
-		message.add_credit_section(section_name=_('Image Alignment'), people=['Hugin'])
-		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards.'])
-		message.set_visible(True)#####message.show()
+		message.add_credit_section(section_name=_('Image Alignment'), people=['align-image-stack']) #43
+		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards'])
+		message.set_visible(True)
 
 	def	showHelp(action, button):
 		message = Gtk.Window()
@@ -450,31 +451,30 @@ def on_activate(app):
 		message.set_default_size(1000, 700)
 		message.set_child(notebook)
 		message.set_transient_for(win); message.set_modal(win)
-		message.set_visible(True)#####message.show()
+		message.set_visible(True)
 	
 	def	showForum(action, button):
 		result = webbrowser.open(urlForum)
 		
 	#def	showLocale(action, button):
 	#	result = webbrowser.open(urlCrowdin)
-		
+
 	def readSettings():
-		global version, myfold, myfile, myext, formatcode, stylecode, viewDim, scope, viewType, firstrun
+		global version, myfold, myfile, myext, formatcode, stylecode, viewDim, scope, viewType, firstrun, retain, balance #43
 		# local okpref, okcol, ver, i
 		# Preference file is not present when program is installed, so shows whether this is the first run.
 	
 		# create settings array
 		prefdata = []
-		for i in range(8):
+		for i in range(10): #43
 			prefdata.append('')
 
 		# load settings file, if file not found or is wrong version skip to end
 		# if any fields are bad, replace with default
 		okpref = True
 		try:
-			with open(configfold + preffile, 'r') as infile:
+			with open(configfold + settingsfile, 'r') as infile:
 				ver = infile.readline()[:-1]
-				#prefdata[i] = prefdata[i][:-1] # remove linefeed
 				if ver != version:
 					okpref = False				
 		except:
@@ -482,8 +482,8 @@ def on_activate(app):
 	
 		if okpref:
 			try:
-				with open(configfold + preffile, 'r') as infile:
-					for i in range(0, 8):
+				with open(configfold + settingsfile, 'r') as infile:
+					for i in range(0, 10): #43
 						prefdata[i] = infile.readline()
 						prefdata[i] = prefdata[i][:-1]
 			except:
@@ -522,6 +522,21 @@ def on_activate(app):
 			else:
 				viewType = 'ASCNP'
 
+			if prefdata[8] in ['True', 'False']: #43
+				if prefdata[8] == 'True':
+					retain = True
+				else:
+					retain = False
+			else:
+				retain = False
+
+			try: #43
+				balance = float(prefdata[9]) #43
+				if not (balance >= .5 and balance <= 1.5):
+					balance = 1
+			except:
+				balance = 1
+
 		if okpref:
 			firstrun = False
 		else: # defaults
@@ -533,9 +548,11 @@ def on_activate(app):
 			stylecode = 'N'
 			viewDim = 'All'
 			viewType = 'ASCNP'
+			retain = False #43
+			balance = 1 #43
 		
 			# write pref file anyway in case mydir/myfile have been deleted or any other problem
-			with open(configfold + preffile, 'w') as fn:			
+			with open(configfold + settingsfile, 'w') as fn:			
 				fn.write(version+'\n')
 				fn.write(myfold+'\n')
 				fn.write(myfile+'\n')
@@ -544,6 +561,11 @@ def on_activate(app):
 				fn.write(stylecode+'\n')
 				fn.write(viewDim+'\n')
 				fn.write(viewType+'\n')
+				if retain:
+					fn.write('True\n') #43
+				else:
+					fn.write('False\n') #43
+				fn.write(str(balance)+'\n') #43
 
 	#-----------------------------------------------------------------------------		 
 	def exif(newfilename, newext):
@@ -840,6 +862,11 @@ def on_activate(app):
 				(viewDim in ('All', '2D') and viewlist[viewind][2] == '2D')   
 			):
 
+			if viewlist[viewind][2] == '2D': #43 greyout delete button for 2D images
+				GbuttonDelete.set_sensitive(False)
+			else:
+				GbuttonDelete.set_sensitive(True)
+
 			# two 2D images for triptych	
 			if viewDim == 'Triptych':
 				
@@ -1011,13 +1038,11 @@ def on_activate(app):
 				else:
 					styleAIS = 'P'
 
-				#command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i -P -C "'+workfold+'right.'+newext+'" "'+workfold+'left.'+newext+'"' 
-				#command	 = 'align_image_stack -a "'+workfold+fileout+'" -m -i --use-given-order -"'+styleAIS+'" -C "'+foldR+fileright+'" "'+foldL+fileleft+'"' #-v {verbose}
-				command	 = 'align_image_stack -a "'+workfold+fileout+'" -"'+styleAIS+'" -C "'+foldR+fileright+'" "'+foldL+fileleft+'"' #-v {verbose} #-i favour centre of images
-
+				command = 'align_image_stack -S -C -i --align-to-first --use-given-order -'+styleAIS+' -a '+workfold+fileout+' '+foldR+fileright+' '+foldL+fileleft #43
+				
 				args = shlex.split(command) 
 		
-				print('Aligning'+' ', workfold+fileout) # For checking which files cause the problem
+				print('Aligning'+' ', workfold+fileout) # For checking which files cause the problem #43
 				result = os.system(command)
  		
 				# remove turned images if they exist
@@ -1037,6 +1062,13 @@ def on_activate(app):
 						Lred	 = image_left.getchannel('R')
 						Rgreen = image_right.getchannel('G')
 						Rblue	 = image_right.getchannel('B')
+
+						#43 easter egg for anaglyph colour balance
+						if balance != 1:			
+							Lred = Lred.point	(lambda i: i * balance)
+							Rgreen = Rgreen.point	(lambda i: i * 1/balance)
+							Rblue = Rblue.point	(lambda i: i * 1/balance)
+
 						# merge the 3 colours
 						image_new = Image.merge('RGB', (Lred, Rgreen, Rblue))
 			
@@ -1066,17 +1098,23 @@ def on_activate(app):
 
 					# close delete input and delete intermediate files 
 					image_left.close ; image_right.close
-					 
+ 
 					if os.path.isfile(workfold+fileout+'0001.tif'):
+						if retain: #43
+							shutil.copy(workfold+fileout+'0001.tif', myfold+newfile+leftn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
 						os.remove(workfold+fileout+'0001.tif')
 					if os.path.isfile(workfold+fileout+'0000.tif'):
+						if retain: #43
+							shutil.copy(workfold+fileout+'0000.tif', myfold+newfile+rightn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
 						os.remove(workfold+fileout+'0000.tif') 
 				else:
-					pass # warnings = warnings + 'It was not possible to align '+fileout+'.\n'
+					print('Could not align error: ' + str(result) + ' ' + fileout + '\n' ) # warnings = warnings + 'It was not possible to align '+fileout+'.\n'  #43
 		
 		if os.path.isfile(workfold+runningfile):
 				os.remove(workfold+runningfile)
-				
+
+		print('Finished') #43
+
 	#-----------------------------------------------------------------------------			
 	def buttonPrev(button):
 		findNext('<')		
@@ -1101,6 +1139,7 @@ def on_activate(app):
 		global viewDim
 		if menuitem.get_active():	
 			viewDim = 'All'
+			greyout(False) #43
 			if not startup:
 				findVmatch(); showImage()
 					
@@ -1108,6 +1147,7 @@ def on_activate(app):
 		global viewDim
 		if menuitem.get_active():
 			viewDim = '2D'
+			greyout(True) #43
 			if not startup:
 				findVmatch(); showImage()
 			
@@ -1115,6 +1155,7 @@ def on_activate(app):
 		global viewDim
 		if menuitem.get_active():
 			viewDim = '3D'
+			greyout(False) #43
 			if not startup:
 				findVmatch(); showImage()
 	
@@ -1122,10 +1163,11 @@ def on_activate(app):
 		global viewDim
 		if menuitem.get_active():
 			viewDim = 'Triptych'
+			greyout(False) #43
 			if not startup:
 				findVmatch(); showImage()
 				
-	#-----------------#####
+	#-----------------
 	def tickViewAnaglyph(menuitem):
 		global viewType
 		if menuitem.get_active():	
@@ -1217,6 +1259,13 @@ def on_activate(app):
 			pairlist = []						
 			makeviewlist(False)#; viewind = 0; findNext('<'); showImage()
 
+	def tickRetain(menuitem): #43
+		global retain
+		if menuitem.get_active():
+			retain = True
+		else:
+			retain = False
+
 	#-----------------------------------------------------------------------------			
 	def buttonProcess(button):
 		global warnings, viewDim, pairlist, infolist, viewind, process
@@ -1226,7 +1275,7 @@ def on_activate(app):
 
 		# DO NOTHING Still processing
 		if os.path.isfile(workfold+runningfile):
-			showInfo(_('Please wait for the current processing to finish.'))
+			showInfo(_('Please wait for the current processing to finish'))
 
 		# QUEUE empty pairlist - make the list
 		elif process == 'queue': #not reset and pairlist == []:
@@ -1260,7 +1309,7 @@ def on_activate(app):
 				GtickView3D.set_active(True)
 			else: # empty list - warn nothing to process
 				makeviewlist(False); viewind = 0; findNext('<'); showImage()
-				showInfo(_('Nothing to process.'))
+				showInfo(_('Nothing to process'))
 			
 
 		# RESET Button on Reset empty pairlist
@@ -1287,20 +1336,20 @@ def on_activate(app):
 		#local ok
 		
 		if os.path.isfile(workfold+runningfile):
-			showInfo(_('Please wait for the current processing to finish.'))
+			showInfo(_('Please wait for the current processing to finish'))
 		elif process == 'process':
-			showInfo(_('Cannot delete from queue.'))
+			showInfo(_('Cannot delete from queue'))
 		elif process in ('queue', 'reset'):
 			if len(viewlist) > 0:
 				if os.path.isfile(myfold+viewlist[viewind][0]+'.'+viewlist[viewind][1]):
 					if viewlist[viewind][2] == '3D':
 						showDelete()
 					else:
-						showInfo(_('Only 3D images can be deleted.'))			
+						showInfo(_('Only 3D images can be deleted')) #43 redundant as delete button is greyed out for 2D images
 				else:
-					showInfo(_('Image does not exist.'))
+					showInfo(_('Image does not exist'))
 			else:
-				showInfo(_('No 3D images to delete.'))
+				showInfo(_('No 3D images to delete'))
 				
 	def show_open_dialog_file(win, anything):
 		global process
@@ -1332,10 +1381,10 @@ def on_activate(app):
 				if (newfile[-4] in okchar and newfile[-3] in okchar and newfile[-2] in okformat and newfile[-1] in okstyle):
 					myfold = newfold +'/' ; myfile = newfile[:-4]; myext = newext[1:] 
 				else:
-					showInfo(_('Filename must follow the rules in the Help about File Selection.'))
+					showInfo(_('Filename must follow the rules in the Help about File Selection'))
 					return
 			else:
-				showInfo(_('Filename must follow the rules in the Help about File Selection.'))
+				showInfo(_('Filename must follow the rules in the Help about File Selection'))
 				return
 
 			win.set_title(myfold + myfile + '*.' + myext)
@@ -1379,65 +1428,92 @@ def on_activate(app):
 
 			win.set_title(myfold)
 			showImage()
-			
+		
 	#============================================================================= 
 	# notebook
+
 	notebook = Gtk.Notebook()
 	notebook.set_tab_pos(Gtk.PositionType.LEFT)
-	
-	label0 = Gtk.Label.new(_(label1BasicsTake))
-	label0.props.justify = Gtk.Justification.LEFT; label0.props.yalign = 0#; label0.props.xalign = .5
+
+	label0 = Gtk.Label.new(helpPage[0])
+	label0.props.justify = Gtk.Justification.LEFT; label0.props.yalign = 0; label0.props.xalign = 0 #43 xalign was commented out
 	label0.set_wrap(True)
 	page0 = Gtk.ScrolledWindow()
-	page0.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
+	page0.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS) # scrollbars
 	page0.set_child(label0)
 	notebook.append_page(page0)
 	notebook.set_tab_label_text(page0, _('Basics'))
 
-	label1 = Gtk.Label.new(_(label2SourceChoose))
-	label1.props.justify = Gtk.Justification.LEFT; label1.props.yalign = 0#; label1.props.xalign = .5
+	#43
+	label0.set_margin_start(5)
+	label0.set_margin_end(5)
+	label0.set_margin_top(5)
+	#
+
+	label1 = Gtk.Label.new(helpPage[1])
+	label1.props.justify = Gtk.Justification.LEFT; label1.props.yalign = 0; label1.props.xalign = 0
 	label1.set_wrap(True)
 	page1 = Gtk.ScrolledWindow()
 	page1.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page1.set_child(label1)
 	notebook.append_page(page1)
 	notebook.set_tab_label_text(page1, _('Source Photographs'))
-		
-	label2 = Gtk.Label.new(_(label3FileFile))
-	label2.props.justify = Gtk.Justification.LEFT; label2.props.yalign = 0#; label2.props.xalign = .5
+
+	label1.set_margin_start(5)
+	label1.set_margin_end(5)
+	label1.set_margin_top(5)
+			
+	label2 = Gtk.Label.new(helpPage[2])
+	label2.props.justify = Gtk.Justification.LEFT; label2.props.yalign = 0; label2.props.xalign = 0
 	label2.set_wrap(True)
 	page2 = Gtk.ScrolledWindow()
 	page2.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page2.set_child(label2)
 	notebook.append_page(page2)
 	notebook.set_tab_label_text(page2, _('File Selection'))
-		
-	label3 = Gtk.Label.new(_(label4OptionsThe))
-	label3.props.justify = Gtk.Justification.LEFT; label3.props.yalign = 0#; label3.props.xalign = .5
+
+	label2.set_margin_start(5)
+	label2.set_margin_end(5)
+	label2.set_margin_top(5)
+	
+	label3 = Gtk.Label.new(_(helpPage[3]))
+	label3.props.justify = Gtk.Justification.LEFT; label3.props.yalign = 0; label3.props.xalign = 0
 	label3.set_wrap(True)
 	page3 = Gtk.ScrolledWindow()
 	page3.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page3.set_child(label3)
 	notebook.append_page(page3)
 	notebook.set_tab_label_text(page3, _('3D Image Options'))
+
+	label3.set_margin_start(5)
+	label3.set_margin_end(5)
+	label3.set_margin_top(5)
 	
-	label4 = Gtk.Label.new(_(label5ProcessingFor))
-	label4.props.justify = Gtk.Justification.LEFT; label4.props.yalign = 0#; label4.props.xalign = .5
+	label4 = Gtk.Label.new(helpPage[4])
+	label4.props.justify = Gtk.Justification.LEFT; label4.props.yalign = 0; label4.props.xalign = 0
 	label4.set_wrap(True)
 	page4 = Gtk.ScrolledWindow()
 	page4.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page4.set_child(label4)
 	notebook.append_page(page4)
 	notebook.set_tab_label_text(page4, _('Process'))
+
+	label4.set_margin_start(5)
+	label4.set_margin_end(5)
+	label4.set_margin_top(5)
 	
-	label5 = Gtk.Label.new(_(label6ViewScroll))
-	label5.props.justify = Gtk.Justification.LEFT; label5.props.yalign = 0#; label5.props.xalign = .5
+	label5 = Gtk.Label.new(helpPage[5])
+	label5.props.justify = Gtk.Justification.LEFT; label5.props.yalign = 0; label5.props.xalign = 0
 	label5.set_wrap(True)
 	page5 = Gtk.ScrolledWindow()
 	page5.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.ALWAYS)
 	page5.set_child(label5)
 	notebook.append_page(page5)
-	notebook.set_tab_label_text(page5, _('View'))
+	notebook.set_tab_label_text(page5, _('Images to View'))
+
+	label5.set_margin_start(5)
+	label5.set_margin_end(5)
+	label5.set_margin_top(5)
 
 	# BOXES-----------------------------------------------------------------------
 	separatorView = Gtk.Separator(); separatorProcess = Gtk.Separator(); separatorInfo = Gtk.Separator()
@@ -1470,8 +1546,11 @@ def on_activate(app):
 	boxOptions.append(boxView)
 	
 	labelView = Gtk.Label.new(); labelView.set_markup('<b>' +_('View') +'</b>')
-	
 	boxView.append(labelView)
+
+	labelDimensions = Gtk.Label.new(); labelDimensions.set_markup('<b>' +_('Dimensions') +'</b>') #43
+	boxView.append(labelDimensions) #43
+
 	boxView.append(boxViewT)
 	labelViewtype = Gtk.Label.new(); labelViewtype.set_markup('<b>' +_('3D Image Types') +'</b>')
 	boxView.append(labelViewtype)
@@ -1482,6 +1561,12 @@ def on_activate(app):
 	boxProcess.append(labelProcess)
 	boxProcess.append(boxProcessT)
 	boxProcessT.append(boxProcessL)
+
+	labelRetain = Gtk.Label.new(); labelRetain.set_markup('<b>' +_('Aligned 2D Images') +'</b>') #43
+	boxProcess.append(labelRetain) #43
+	GtickRetain = Gtk.CheckButton(label=_('Save')); GtickRetain.props.tooltip_text = tipRetain #43
+
+	boxProcess.append(GtickRetain) #43
 	boxProcess.append(boxProcessButton)
 	
 	labelFormat = Gtk.Label.new(); labelFormat.set_markup('<b>' +_('Format') +'</b>')
@@ -1492,7 +1577,7 @@ def on_activate(app):
 	labelStyle = Gtk.Label.new(); labelStyle.set_markup('<b>' +_('Style') +'</b>')
 	labelStyle.props.xalign = 0
 	boxProcessR.append(labelStyle)
-
+	
 	boxInfo = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 	boxOptions.append(boxInfo)
 	boxInfo.append(separatorInfo)
@@ -1525,7 +1610,7 @@ def on_activate(app):
 	boxLabelImage1 = Gtk.Box(); boxLabelImageL = Gtk.Box(); boxLabelImageR = Gtk.Box()
 	boxImage1 = Gtk.Box(); boxImageL = Gtk.Box(); boxImageR = Gtk.Box()
 
-	labelImage1 = Gtk.Label.new(); labelImageL = Gtk.Label.new(); labelImageR = Gtk.Label.new() ###
+	labelImage1 = Gtk.Label.new(); labelImageL = Gtk.Label.new(); labelImageR = Gtk.Label.new()
 	boxLabelImage1.props.halign = Gtk.Align.CENTER; boxLabelImageL.props.halign = Gtk.Align.CENTER; boxLabelImageR.props.halign = Gtk.Align.CENTER
 	image1 = Gtk.Picture(); imageL = Gtk.Picture(); imageR = Gtk.Picture()
 
@@ -1568,7 +1653,6 @@ def on_activate(app):
 
 	GbuttonDelete = Gtk.Button(label=_('Delete')); GbuttonDelete.props.width_request = 100
 	GbuttonDelete.props.tooltip_text = tipDelete	
-	
 	
 	GbuttonProcess = Gtk.Button(label=_('Queue')); process = 'queue';
 	GbuttonProcess.props.width_request = 100
@@ -1632,8 +1716,9 @@ def on_activate(app):
 	GbuttonPrev.connect('clicked', buttonPrev)
 	GbuttonNext.connect('clicked', buttonNext)
 	GbuttonDelete.connect('clicked', buttonDelete)
-	GbuttonProcess.connect('clicked', buttonProcess)
-	
+	GbuttonProcess.connect('clicked', buttonProcess)	
+	GtickRetain.connect('toggled', tickRetain)
+
 	# group
 	GtickView2D.set_group(GtickViewAll)
 	GtickView3D.set_group(GtickViewAll)
@@ -1652,7 +1737,7 @@ def on_activate(app):
 
 	# Create open menu button
 	menuOpen = Gtk.MenuButton(label=_('Open')); menuOpen.props.tooltip_text = tipOpen
-	menuOpen.props.width_request = 85 #####
+	menuOpen.props.width_request = 85
 	menuOpen.set_popover(popover1)
 	win.header.pack_start(menuOpen)
 
@@ -1695,7 +1780,7 @@ def on_activate(app):
 	popover2.set_menu_model(menu2)
 
 	# Create a menu button
-	menuStripey = Gtk.MenuButton()
+	menuStripey = Gtk.MenuButton(); menuStripey.props.tooltip_text = tipStripey
 	menuStripey.set_popover(popover2)
 	menuStripey.set_icon_name('open-menu-symbolic')
 	win.header.pack_end(menuStripey)
@@ -1772,14 +1857,20 @@ def on_activate(app):
 		GtickPopout.set_active(True)
 	else: # Normal
 		GtickNormal.set_active(True)
+
+	if retain: # 43
+		GtickRetain.set_active(True)
+	else:
+		GtickRetain.set_active(False)
+
 	startup = False
 
 	if firstrun:
-		message = Gtk.MessageDialog(title = _('How to use Popout3D'), text = label1BasicsTake)
+		message = Gtk.MessageDialog(title = _('How to use Popout3D'), text = helpPage[0]) #43
 		message.set_modal(win); message.set_transient_for(win)
 		message.add_buttons(_('OK'), Gtk.ResponseType.OK)		
 		response = message.connect('response', ask, None)
-		message.set_visible(True) #####message.show()
+		message.set_visible(True)
 	
 	makeviewlist(False); viewind = 0
 	if len(viewlist) > 0:

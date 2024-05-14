@@ -7,23 +7,26 @@
   <name>Popout3D</name>
   <summary>Creates 3D images from photographs taken with an ordinary camera.</summary>
   <developer_name>PopoutApps</developer_name>
-  <content_rating type="oars-1.0" />
+  <content_rating type="oars-1.0">
+    <content_rating value="0" />
+    <content_rating_system>Generic</content_rating_system>
+    <content_rating_reason>No objectionable content</content_rating_reason>
+  </content_rating>
   <releases>
-    <release date="2024-03-20" version="1.6.42">
+    <release date="2024-05-14" version="1.6.43">
       <description>
         <p>
-          Corrected directories.
-          Removed translation link.
-          Updated forum link.        
+					Added option to retain aligned 2D images. 
+					Several minor improvements.
         </p>
       </description>
     </release> 
   </releases>
   <description>
     <p>
-      Create 3D images with a phone or camera.
-      Take two photos of a subject and the software will create a 3D image from them. Vertical and  rotational alignment of the left and right images is essential for a convincing 3D effect, but difficult to achieve with an ordinary camera. This software corrects it. 3D image formats that can be created are anaglyph (red/cyan), side-by-side and crossover. 
-      Several photos can be processed at once and the resulting images reviewed.   
+    Create 3D images with a phone or camera.
+     Take two photos of a subject and the software will create a 3D image from them. Vertical and  rotational alignment of the left and right images is essential for a convincing 3D effect, but difficult to achieve with an ordinary camera. This software corrects it. 3D image formats that can be created are anaglyph (red/cyan), side-by-side and crossover. 
+    Photos can be processed as a batch.   
     </p>
   </description> 
   <launchable type="desktop-id">com.github.PopoutApps.popout3d.desktop</launchable>
@@ -34,5 +37,4 @@
   </screenshots>
   <url type="homepage">https://popout3d.proboards.com/</url>
   <url type="vcs-browser">https://github.com/PopoutApps/popout3d</url>
-  </component>
-  
+  </component>  
