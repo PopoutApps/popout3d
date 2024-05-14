@@ -5,13 +5,9 @@
   <metadata_license>FTL</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>  
   <name>Popout3D</name>
-  <summary>Creates 3D images from photographs taken with an ordinary camera.</summary>
+  <summary>Creates 3D images from photographs taken with an ordinary camera</summary>
   <developer_name>PopoutApps</developer_name>
-  <content_rating type="oars-1.0">
-    <content_rating value="0" />
-    <content_rating_system>Generic</content_rating_system>
-    <content_rating_reason>No objectionable content</content_rating_reason>
-  </content_rating>
+  <content_rating type="oars-1.0" />
   <releases>
     <release date="2024-05-14" version="1.6.43">
       <description>
@@ -25,7 +21,7 @@
   <description>
     <p>
     Create 3D images with a phone or camera.
-     Take two photos of a subject and the software will create a 3D image from them. Vertical and  rotational alignment of the left and right images is essential for a convincing 3D effect, but difficult to achieve with an ordinary camera. This software corrects it. 3D image formats that can be created are anaglyph (red/cyan), side-by-side and crossover. 
+    Take two photos of a subject and the software will create a 3D image from them. Vertical and  rotational alignment of the left and right images is essential for a convincing 3D effect, but difficult to achieve with an ordinary camera. This software corrects it. 3D image formats that can be created are anaglyph (red/cyan), side-by-side and crossover. 
     Photos can be processed as a batch.   
     </p>
   </description> 
