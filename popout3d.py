@@ -60,7 +60,7 @@ except:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.43'  						# formatted for "About"
+version = '1.6.43a'  						# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -94,7 +94,7 @@ runningfile = 'RUNNING'					# to show that multiprocessing is running
 stopfile  = 'STOP'							# to tell multiprocessing to stop
 process = 'queue'								# queue/process/reset
 retain = False									# whether to save aligned L and R images #43
-balance = 1											# fudge factor for left right balance in Anaglyphs #43
+balance = 1											# balance factor for left right balance in Anaglyphs #43
 Mdatafold = '' 									# Meson read-only data files
 Mlocale = '' 										# Meson language files
 urlForum = 'https://popout3d.proboards.com/' 
@@ -566,6 +566,8 @@ def on_activate(app):
 				else:
 					fn.write('False\n') #43
 				fn.write(str(balance)+'\n') #43
+
+			print('<<',balance,'>>')
 
 	#-----------------------------------------------------------------------------		 
 	def exif(newfilename, newext):

@@ -9,11 +9,10 @@
   <developer_name>PopoutApps</developer_name>
   <content_rating type="oars-1.0" />
   <releases>
-    <release date="2024-05-14" version="1.6.43">
+    <release date="2025-01-02" version="1.6.43a">
       <description>
         <p>
-					Added option to retain aligned 2D images. 
-					Several minor improvements.
+					Technical updates only. 
         </p>
       </description>
     </release> 
