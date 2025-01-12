@@ -60,7 +60,7 @@ except:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.43a'  						# formatted for "About"
+version = '1.6.44'  						# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -185,76 +185,82 @@ else: # no package for testing
 locale.setlocale(locale.LC_ALL, '') # For words in GTK4 itself, locale to users default language (otherwise might be C/POSIX locale)
 # To test GTK4 built-in words, use this in Bash: export LC_ALL=nl_NL.UTF-8
 language = locale.getlocale()[0]
-#language = 'nl_NL' # test
-#language = 'de_DE' # test
+language = 'fr_FR' # test
 lang = gettext.translation('popout3d', localedir=Mlocale, languages=[language], fallback=True)
 _ = lang.gettext
 
+print(language)
+
 # Help pages -------------------------------------------------------------------
+#44 Revised help text and one command text.
+
 helpPage = []
 
 # Basics -----------------------------------------------------------------------
-helpPage.append(_('''Take two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same thing and take another. Copy them to your PC, then rename them so that they have exactly the same name, but add an "L" at the end of the left-hand one, add an "R" to the end of the right-hand one. For example photoL.JPG and photoR.JPG.
+helpPage.append(_('''You need two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same point of the subject and take another. Copy them to your PC, then rename them so that they have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG.
 
-Open Popout3D and select one of these photos with Open>File. Click Queue to see which 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
+Open Popout3D and select one of these photos with Open>File. Click Queue to see what 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
 
-You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without the goggles.'''))
+You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without goggles.'''))
 
 # Source Files -----------------------------------------------------------------
-helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right but pointing at the same thing, and take another. Always take them in sequence from left to right, so you don't get them mixed up. Popout3D may not be able to read/write image files on your camera or mobile phone and the 3D images you create will need extra space, so it's best to copy your original photos onto your PC. It is also easier to rename the photos on your PC. Rename them so that they have exactly the same name, but add an "L" at the end of the left-hand one, and add an "R" to the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the spacing right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
+helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right, point it at the same area of the subject, and take another. Always take them in sequence from left to right, so you don't get them mixed up. It's best to copy your original photos onto your PC to process them. Rename them so that they both have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the camera postion right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
 
-Each set of images (all those for the same subject) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
+Each set of images (all those intended for the same 3D image) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
 
 Movement
-Stationary objects like buildings or scenery give good results. Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may be work in the right circumstances, for example if there isn't too much wind, and the water is placid. Moving vehicles or people, or fast-flowing water like a waterfall or waves won't work.
+Stationary objects like buildings or scenery give good results. Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may work in the right circumstances, for example if there isn't too much wind, and the water is placid. Moving vehicles, people or animals, or fast-flowing water like a waterfall or waves won't work.
 
 Quality of Effect
 A picture with objects at varying distances results in a convincing effect. Distant scenery won't work well, as there is little perspective effect anyway.
 
 Notes
-Some images are too difficult for the aligning software, and the resulting image is unusable.
+Some images are too difficult for the aligning software, the result will just be a blank grey square.
 
-For Anaglyph 3D avoid images with all red or all cyan objects. They will look odd as they only appear in one eye.
+For Anaglyph 3D, avoid images with all red or all cyan objects. They will look odd as they will only appear in one eye.
 
-Because the 2D images must have exactly the same width and height in pixels, editing them is difficult. It can be done with a photo editor like rawTherapee, which shows you the size that the edited image will have, so you can make them match. It is easier to edit the 3D image, although you can't crop Side-By-Side or Crossover ones.
+Cropping images - for Anaglyph 3D it is easiest to edit the 3D image. For Side-By-Side or Crossover ones you cannot do this, so you must crop the original 2D images. This can be difficult, because you must ensure that the edited photos have exactly the same height and width in pixels. You also need to keep most of the same content in both images without losing the difference in view point.
 
 Nearby objects can cause strange effects when the camera's depth of field is high. A shorter exposure will reduce the depth of field.'''))
 
 # File Selection----------------------------------------------------------------
 helpPage.append(_('''File
-To process a single set of images which are all for the same subject, first use Open>File to choose any file from the set.
+To process a single set of 2D images which will all be used for the same 3D image, first use Open>File to choose any file from the set.
 
 scenery1.jpg
 scenery2.jpg
 scenery3.jpg
 
-Selecting any of these files will prepare you to process all of them. The program will create a 3D image for each pair of originals, so you are able to choose the best combination of images for left and right. It is not recommended to use more than 3 originals as the number of output images goes up dramatically:
+Selecting any of these files will prepare you to process all of them. The program will create a 3D image for each pair of originals, so you are able to choose the best. It is not recommended to use more than 3 originals as the number of output images goes up dramatically:
 
 2 originals produce 1 3D image
 3 originals produce 3 3D images
 4 originals produce 6 3D images
 5 originals produce 10 3D images
 
-All the 3D images get the same filename (except the final character) and extension as the originals, plus two digits and a letter each for the format and style. These examples are "Anaglyph" format with "Normal" style:
+All the 3D images in the set will get the same original filename as the originals with the final characters from both, followed by a letter for the 3D format and a letter for the style.
 
-scenery12AN.jpg was made with scenery1.jpg for the left image and scenery2.jpg for the right.
-scenery13AN.jpg was made with scenery1.jpg for the left image and scenery3.jpg for the right.
-With images ending in L and R you would get sceneryLRAN.jpg.
+These examples are "Anaglyph" format with "Normal" style:
+
+scenery12AN.jpg was made from scenery1.jpg for the left image and scenery2.jpg for the right.
+scenery13AN.jpg was made from scenery1.jpg for the left image and scenery3.jpg for the right.
+
+Images ending in L and R would give sceneryLRAN.jpg.
 
 Folder:
-To process all the image sets in a folder, first use Open>Folder to choose the folder with the sets of images.'''))
+To process all the image sets in a folder, use Open>Folder.'''))
 
 # Options for 3D Images --------------------------------------------------------
 helpPage.append(_('''The format of the 3D image may be:
 
 Anaglyph
-A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
+A red/cyan coloured 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
 
 Side-by-side
-A side-by-side 3D image viewed straight ahead. left-hand image on the left, right-hand on the right. Some people can see these without a viewer, some can't.
+A side-by-side 3D image with the left-hand image on the left, the right-hand on the right. Some people can see these without a viewer, some can't.
 
 Crossover
-A side-by-side 3D image viewed with eyes crossed. right-hand image on the left, left-hand on the right. Some people can see these without a viewer, some can't.
+A side-by-side 3D image viewed with eyes crossed. The right-hand image is on the left, the left-hand on the right. Some people can see these without a viewer, some can't.
 
 There are two styles available:
 
@@ -262,49 +268,49 @@ Normal
 A normal 3D image with the front of the picture level with the screen.
 
 Popout
-A "popout" image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".
+A "popout" image. In some cases the effect is startling, as the front of the 3D image will stand out in front of the screen. In most cases there is little or no difference from "Normal".
 
 Aligned 2D images
-The processing creates aligned versions of left and right images, which are then merged into a 3D image. These two images are only temporary. If you want to try your own method of creating and displaying 3D images, you can save these two images by selecting "Aligned 2D Images > Save". They have names like PhotoL(LRSN).tif, the "PhotoL" refers to the original left-hand image. The "-LRSN" refers to the 3D image for which they were created. The "S" is irrelevant, but the "P" indicates that you a 3D image you make from it will be a popout one.'''))
+The processing creates aligned versions of the left and right images, which are then merged into a 3D image. These two images are only temporary. If you want to use them to try your own method of creating and displaying 3D images, you can save them by selecting "Aligned 2D Images>Save". They will remain after the processing has finished. They will have names like PhotoL(LRP).tif, the "LR" refers to the final identifying characters from the two original images. The "P" indicates that any 3D image you make from them will be a popout one.'''))
 
 # Processing -------------------------------------------------------------------
-helpPage.append(_('''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
+helpPage.append(_('''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and in rotation. This is very difficult to achieve when holding a camera and even by editing the 2D images. This program does it for you, it may take about 20 seconds per 3D image.
 
-An existing 3D image file will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing 3D image.
+An existing 3D image will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing one.
 
 To start processing the selected images, click on "Queue", this will show a list of the images to be created in the panel to the left and the button will change to "Process". If you don't like the list, choose another File/Folder or Format/Style.
-If you are happy with this list, press "Process", the button will change to "Reset". You can use the < and > buttons to look for completed 3D images. Only the recently processed images are shown. When you have finished checking them, press "Reset" to go back to the File or Folder selection, now including the new images. Using the Open menu or the Delete or process buttons will also reset the list.
+If you are happy with list of images in the queue, press "Process", the button will change to "Reset". You can use the < and > buttons to look for completed 3D images. Only the recently processed images are shown. When you have finished checking them, press "Reset" to go back to the File or Folder selection, now including both old and new images. Using the Open menu or the Delete or process buttons will also reset the list.
 
 Notes
-Portrait images from a mobile phone may be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
+Portrait images from a mobile phone may actually be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
 
-Mobile mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
+Mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
 
-The 3D images won't have valid EXIF tags.
+The 3D images won't have valid EXIF tags - date and so on.
 
 Settings from previous versions of the program are not loaded.
 
-If you can't remember which image was left and which was right, create a 3D image as usual. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image.
+If you can't remember which image was the left-hand one and which was the right-hand one, create an anaglyph 3D image. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image. You can do something similar with Side-by-Side and Crossover images.
 
-You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''))
+You can install and run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''))
 
 # View -------------------------------------------------------------------------
 helpPage.append(_('''Scroll backwards and forwards through the images using < and >.
 
 All
-All the images in the chosen folder or set which follow the naming rules will be shown.
+All the images in the chosen set or folder which follow the naming rules will be shown.
 
 2D
-Only 2D images in the chosen folder or set which follow the naming rules will be shown.
+Only 2D images in the chosen set or folder which follow the naming rules will be shown.
 
 3D
-Only 3D images in the chosen folder or set which follow the naming rules will be shown.
+Only 3D images in the chosen set or folder which follow the naming rules will be shown.
 
 Triptych
 3D images will be shown at the top with the 2D images they were made from shown beneath.
 
 3D Image Types
-These selections only affect 3D/Triptych views (see Processing for explanations). If you have created more than one type of 3D image, you won't need to change viewing devices as you browse the images, as these buttons allow you to restrict which image types are shown.
+These selections only affect 3D/Triptych views (see Processing for explanations). If you have created more than one type of 3D image, these buttons allow you to show only one type at a time.
 
 Delete
 If a 3D image is being displayed you may delete it. To ensure that you don't lose original images, 2D images cannot be deleted from within Popout3D. You could of course delete them using your file manager.
@@ -332,7 +338,7 @@ tipSidebyside	= _('A 3D image with the left-hand image on the left and the right
 tipCrossover	= _('A 3D image with the left-hand image on the right and the right-hand image on the left')
 tipNormal 		= _('A normal 3D image')
 tipPopout			= _('A 3D image which may appear to stand out in front of the screen')
-tipRetain			= _('Save the aligned 2D images which were created by align-image-stack') #43
+tipRetain			= _('Save the aligned 2D images') #43, 44
 
 #===============================================================================
 def on_close_request(app): # When window is closed with X
@@ -438,7 +444,7 @@ def on_activate(app):
 		message.set_comments(_('Create a 3D image from ordinary photographs'))
 		message.set_website_label('Popout3D ' + _('on') + ' GitHub')
 		message.set_website('https://github.com/PopoutApps/popout3d')
-		message.set_copyright(_('Copyright') + ' 2022, 2023 Chris Rogers')
+		message.set_copyright(_('Copyright') + ' 2022 - 2024 Chris Rogers')
 		message.set_license_type(Gtk.License.GPL_3_0)
 		message.set_authors(['PopoutApps'])
 		message.add_credit_section(section_name=_('Image Alignment'), people=['align-image-stack']) #43
@@ -1102,12 +1108,12 @@ def on_activate(app):
 					image_left.close ; image_right.close
  
 					if os.path.isfile(workfold+fileout+'0001.tif'):
-						if retain: #43
-							shutil.copy(workfold+fileout+'0001.tif', myfold+newfile+leftn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
+						if retain: #43 44 remove unneeded codes
+							shutil.copy(workfold+fileout+'0001.tif', myfold+newfile+leftn+'('+leftn+rightn+newstylecode+').tif') 
 						os.remove(workfold+fileout+'0001.tif')
 					if os.path.isfile(workfold+fileout+'0000.tif'):
-						if retain: #43
-							shutil.copy(workfold+fileout+'0000.tif', myfold+newfile+rightn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
+						if retain: #43 44 remove unneeded codes
+							shutil.copy(workfold+fileout+'0000.tif', myfold+newfile+rightn+'('+leftn+rightn+newstylecode+').tif') 
 						os.remove(workfold+fileout+'0000.tif') 
 				else:
 					print('Could not align error: ' + str(result) + ' ' + fileout + '\n' ) # warnings = warnings + 'It was not possible to align '+fileout+'.\n'  #43
