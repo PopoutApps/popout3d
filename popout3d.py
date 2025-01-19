@@ -21,13 +21,13 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 --------------------------------------------------------------------------------
 '''	
 
-# Also depends on hugin_tools for align_image_stack.
 import sys, os, shutil, shlex, glob, subprocess, multiprocessing
+#<44> import numpy and cv2
 
 import warnings #43 to suppress GTK deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from PIL import Image, ImageOps, __version__
+from PIL import Image, ImageOps, __version__, ImageChops #TEST WITH IMAGECHOPS
 from PIL.ExifTags import TAGS
 
 try:
@@ -185,11 +185,9 @@ else: # no package for testing
 locale.setlocale(locale.LC_ALL, '') # For words in GTK4 itself, locale to users default language (otherwise might be C/POSIX locale)
 # To test GTK4 built-in words, use this in Bash: export LC_ALL=nl_NL.UTF-8
 language = locale.getlocale()[0]
-language = 'fr_FR' # test
+language = 'nl_NL' # test
 lang = gettext.translation('popout3d', localedir=Mlocale, languages=[language], fallback=True)
 _ = lang.gettext
-
-print(language)
 
 # Help pages -------------------------------------------------------------------
 #44 Revised help text and one command text.
@@ -197,14 +195,14 @@ print(language)
 helpPage = []
 
 # Basics -----------------------------------------------------------------------
-helpPage.append(_('''You need two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same point of the subject and take another. Copy them to your PC, then rename them so that they have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG.
+helpPage.append(_('''You need two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same part of the subject and take another. Copy them to your PC, then rename them so that they have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG.
 
 Open Popout3D and select one of these photos with Open>File. Click Queue to see what 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
 
 You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without goggles.'''))
 
 # Source Files -----------------------------------------------------------------
-helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right, point it at the same area of the subject, and take another. Always take them in sequence from left to right, so you don't get them mixed up. It's best to copy your original photos onto your PC to process them. Rename them so that they both have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the camera postion right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
+helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right, point it at the same part of the subject, and take another. Always take them in sequence from left to right, so you don't get them mixed up. It's best to copy your original photos onto your PC to process them. Rename them so that they both have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the camera postion right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
 
 Each set of images (all those intended for the same 3D image) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
 
@@ -274,6 +272,7 @@ Aligned 2D images
 The processing creates aligned versions of the left and right images, which are then merged into a 3D image. These two images are only temporary. If you want to use them to try your own method of creating and displaying 3D images, you can save them by selecting "Aligned 2D Images>Save". They will remain after the processing has finished. They will have names like PhotoL(LRP).tif, the "LR" refers to the final identifying characters from the two original images. The "P" indicates that any 3D image you make from them will be a popout one.'''))
 
 # Processing -------------------------------------------------------------------
+#44 removed suggestion of trying Hugin.
 helpPage.append(_('''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and in rotation. This is very difficult to achieve when holding a camera and even by editing the 2D images. This program does it for you, it may take about 20 seconds per 3D image.
 
 An existing 3D image will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing one.
@@ -291,8 +290,7 @@ The 3D images won't have valid EXIF tags - date and so on.
 Settings from previous versions of the program are not loaded.
 
 If you can't remember which image was the left-hand one and which was the right-hand one, create an anaglyph 3D image. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image. You can do something similar with Side-by-Side and Crossover images.
-
-You can install and run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''))
+'''))
 
 # View -------------------------------------------------------------------------
 helpPage.append(_('''Scroll backwards and forwards through the images using < and >.
@@ -447,7 +445,7 @@ def on_activate(app):
 		message.set_copyright(_('Copyright') + ' 2022 - 2024 Chris Rogers')
 		message.set_license_type(Gtk.License.GPL_3_0)
 		message.set_authors(['PopoutApps'])
-		message.add_credit_section(section_name=_('Image Alignment'), people=['align-image-stack']) #43
+		message.add_credit_section(section_name=_('Image Alignment'), people=['OpenCV']) #44
 		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards'])
 		message.set_visible(True)
 
@@ -1005,7 +1003,7 @@ def on_activate(app):
 			else:	
 				newfile = record[0]; leftn = record[1]; rightn = record[2]; newformatcode = record[3]; newstylecode = record[4]; newext = record[5]; tagL = record[6]; tagR = record[7]
 		
-				# make filenames then call align_image_stack
+				# make filenames then call OpenCV #44 align_image_stack
 				fileout	= newfile+leftn+rightn+newformatcode+newstylecode+'.'+newext
 				fileleft	= newfile+leftn+'.'+newext
 				fileright = newfile+rightn+'.'+newext
@@ -1046,6 +1044,7 @@ def on_activate(app):
 				else:
 					styleAIS = 'P'
 
+				#<44> call new def
 				command = 'align_image_stack -S -C -i --align-to-first --use-given-order -'+styleAIS+' -a '+workfold+fileout+' '+foldR+fileright+' '+foldL+fileleft #43
 				
 				args = shlex.split(command) 
@@ -1059,7 +1058,7 @@ def on_activate(app):
 				if os.path.isfile(workfold+fileright):
 					os.remove(workfold+fileright)
 
-				# align_image_stack has worked
+				# alignment has worked
 				if result == 0: 
 					# load left and right images
 					image_left = Image.open(workfold+fileout+'0001.tif')

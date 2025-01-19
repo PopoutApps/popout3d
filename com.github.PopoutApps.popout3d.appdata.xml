@@ -9,10 +9,11 @@
   <developer_name>PopoutApps</developer_name>
   <content_rating type="oars-1.0" />
   <releases>
-    <release date="2025-01-12" version="1.6.44">
+    <release date="2025-02-01" version="1.6.44">
       <description>
         <p>
-					French localisation. 
+        	Change to using OpenCV for image processing.
+					French and Spanish localisation. 
         </p>
       </description>
     </release> 
