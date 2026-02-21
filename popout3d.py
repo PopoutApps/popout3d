@@ -25,67 +25,59 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 --------------------------------------------------------------------------------
 '''	
 #43 import warnings to suppress GTK deprecation warnings
-import sys, os, shutil, shlex, glob, subprocess, multiprocessing, warnings 
-#44 no longer using: shutil, subprocess, shlex? 
-#<44> import numpy and cv2
-
-#44 remove multiprocessing
-import subprocess, threading
+import sys, os, shutil, shlex, glob, subprocess, threading, warnings 
+#44 no longer using: shutil, subprocess, shlex, multiprocessing, numpy, cv 
 
 #----------
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 #----------
+import gettext # No need to try as always present.
 
 try:
 	from PIL import Image, ImageOps, __version__ #DIFF, ImageChops #TEST WITH IMAGECHOPS
-except:
+except ImportError:
 	sys.exit('Failed to import PIL')
 
 try:
 	from PIL.ExifTags import TAGS
-except:
+except ImportError:
 	sys.exit('Failed to import TAGS')
 
-try:
-	import numpy as np
-except:
-	sys.exit('Failed to import np')
+#try:
+#	import numpy as np
+#except ImportError:
+#	sys.exit('Failed to import np')
 
-try:
-	import cv2 # Fedora currently 4.10.0
-except:
-	sys.exit('Failed to import cv2')
+#try:
+#	import cv2 # Fedora currently 4.10.0
+#except ImportError:
+#	sys.exit('Failed to import cv2')
 
 try:
 	import gi
-except:
+except ImportError:
 	sys.exit('Failed to import gi')
-
-try:
-	gi.require_version('Gtk', '4.0')
-except:
-	sys.exit('gi wrong version:', gi.__version__) #44
 
 from gi.repository import Gtk, GdkPixbuf, Gio
 
 try:
-	import gettext
-except:
-		sys.exit('Cannot import gettext')
+	gi.require_version('Gtk', '4.0')
+except ImportError:
+	sys.exit(f'gi wrong version: {gi.__version__}') #44
 
 try:
 	import locale
-except:
+except ImportError:
 		print('Cannot import locale')
 
 try:
 	import webbrowser
-except:
+except ImportError:
 		print('Cannot import webbrowser')
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.44'							# formatted for "About"
+version = '1.6.45'							# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
