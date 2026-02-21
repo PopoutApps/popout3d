@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<component type="desktop-application">
+  <id>com.github.PopoutApps.popout3d</id>
+  <metadata_license>FTL</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>  
+  <name>Popout3D</name>
+  <summary>Creates 3D images from photographs taken with a phone or camera</summary>
+  <developer_name>PopoutApps</developer_name>
+  <content_rating type="oars-1.0" />
+  
+  <branding>
+  <color type="primary" scheme_preference="light">##00ffff</color>
+  <color type="primary" scheme_preference="dark">##ff0000</color>
+	</branding>
+  <translation type="gettext">popout3d</translation>
+  
+  
+  <releases>
+    <release date="2025-03-01" version="1.6.44">
+      <description>
+        <p>
+        	Change to using OpenCV for image processing.
+					French and Spanish localisation. 
+        </p>
+      </description>
+    </release> 
+  </releases>
+  <description>
+    <p>
+    ~Take 2D images with an ordinary camera or a phone and the software will align them accurately then create a 3D image from them.
+    ~Choose the 3D image format from anaglyph, side-by-side and crossover. 
+    </p>
+  </description> 
+  <launchable type="desktop-id">popout3d.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/PopoutApps/popout3d/main/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://popout3d.proboards.com/</url>
+  <url type="vcs-browser">https://github.com/PopoutApps/popout3d</url>
+  </component>  

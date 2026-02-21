@@ -1,5 +1,9 @@
 #! /usr/bin/python3
 
+
+#RPM icon and logo files are OK, but must test for Flatpak, Snap and AppImage
+test = True
+
 '''
 --------------------------------------------------------------------------------
 GNU GENERAL PUBLIC LICENSE GPLv3
@@ -20,15 +24,37 @@ GNU GENERAL PUBLIC LICENSE GPLv3
 	
 --------------------------------------------------------------------------------
 '''	
+#43 import warnings to suppress GTK deprecation warnings
+import sys, os, shutil, shlex, glob, subprocess, multiprocessing, warnings 
+#44 no longer using: shutil, subprocess, shlex? 
+#<44> import numpy and cv2
 
-# Also depends on hugin_tools for align_image_stack.
-import sys, os, shutil, shlex, glob, subprocess, multiprocessing
+#44 remove multiprocessing
+import subprocess, threading
 
-import warnings #43 to suppress GTK deprecation warnings
+#----------
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+#----------
 
-from PIL import Image, ImageOps, __version__
-from PIL.ExifTags import TAGS
+try:
+	from PIL import Image, ImageOps, __version__ #DIFF, ImageChops #TEST WITH IMAGECHOPS
+except:
+	sys.exit('Failed to import PIL')
+
+try:
+	from PIL.ExifTags import TAGS
+except:
+	sys.exit('Failed to import TAGS')
+
+try:
+	import numpy as np
+except:
+	sys.exit('Failed to import np')
+
+try:
+	import cv2 # Fedora currently 4.10.0
+except:
+	sys.exit('Failed to import cv2')
 
 try:
 	import gi
@@ -38,15 +64,14 @@ except:
 try:
 	gi.require_version('Gtk', '4.0')
 except:
-	print(gi.__version__)
-	sys.exit('gi wrong version')
+	sys.exit('gi wrong version:', gi.__version__) #44
 
 from gi.repository import Gtk, GdkPixbuf, Gio
 
 try:
 	import gettext
 except:
-		sys.exit('cannot import gettext')
+		sys.exit('Cannot import gettext')
 
 try:
 	import locale
@@ -60,7 +85,7 @@ except:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.43a'  						# formatted for "About"
+version = '1.6.44'							# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -69,10 +94,13 @@ viewlist = []										# list of images to view
 viewind = 0											# index of image to view
 infolist = ''
 
-dummyfile = 'dummy.png'					# grey image to display when one is missing.
-blankfile = 'blank.png'					# blank image to display for clearing.
-settingsfile = 'popout3d.dat'		# settings file
-logofile = 'popout3d.png'				# logo for About
+blankfile = 'blank.png'					# grey image to display when one is missing.
+
+settingsfile = ''								# settings file [Snap]           >>>>>
+settingsfile = 'popout3d.dat'		# settings file [RPM] tested [AppImage]
+
+logofile = 'com.github.PopoutApps.popout3d'	# Musn't have .png OK for RPM 
+
 myfile = ''											# current file
 myext = ''											# current extension
 # myfold mustn't be defined
@@ -90,171 +118,207 @@ okext	= ['jpg','JPG','jpeg','JPEG','png','PNG','tif','TIF','tiff','TIFF']
 tifext	= ['tif','TIF','tiff','TIFF']
 
 processlist = False							# whether to show only recently processed files 32X 
-runningfile = 'RUNNING'					# to show that multiprocessing is running
-stopfile  = 'STOP'							# to tell multiprocessing to stop
+#44 runningfile = 'RUNNING'					# to show that multiprocessing is running
+#44 stopfile = 'STOP'								# to tell multiprocessing to stop
 process = 'queue'								# queue/process/reset
 retain = False									# whether to save aligned L and R images #43
-balance = 1											# balance factor for left right balance in Anaglyphs #43
-Mdatafold = '' 									# Meson read-only data files
-Mlocale = '' 										# Meson language files
+balance = 1.5									# left right balance in Anaglyphs #43
 urlForum = 'https://popout3d.proboards.com/' 
+##44 name changes and 2 new ones
+environment = ''								# environment in which the app is running
+snap_path = '' 									# Find Snap package data directory 
+homefold = ''										# initial location for looking for photographs.
+configfold = ''									# the Config file.			
+workfold = ''										# temporary images, STOP and RUNNING control files
+datafold = ''										# root of tree for locale and programfold
+programfold = ''								# additional program parts
+localefold = ''									# localisation files
+#44
+logfile = 'align_errors.log'		# logfile for align_image_stack output so it can be disconnected from terminal
+worker = None										# for align_image_stack process
+stop_event = threading.Event()	# for align_image_stack process
 
-#-------------------------------------------------------------------------------
-'''
-Added by 'exalm':
-	$XDG_DATA_HOME defines the base directory relative to which user specific data files should be stored. 
-	If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used.
+#44 environment added and all revised ---------------------------------------
+if 'SNAP' in os.environ:
+	environment = 'snap'
+elif os.environ.get("container") == "flatpak":
+	environment = 'flatpak'
+elif os.environ.get("_") == "/usr/bin/popout3d":
+	environment = 'rpm'
+else:
+	environment = 'terminal'
 
-	$XDG_CONFIG_HOME defines the base directory relative to which user specific configuration files should be stored. 
-	If $XDG_CONFIG_HOME is either not set or empty, a default equal to $HOME/.config should be used.
+if test:
+	print ('<',environment,'>')
 
-exalm
+# Most environment variables aren't any good
+#	gettext will add {language}/LC_MESSAGES to locale
 
-XDG standard
-OK	HOMEFOLD		for initial location for looking for photographs.
-OK 	CONFIGFOLD	for saving/loading the Config file.			
-
-		WORKFOLD		for temporary images, and STOP and RUNNING control files.
-
-Try using XDG... folder, if that doesn't work use local folder, if that doesn't work, exit.
-'''								
-
-#1.6.42 -----------------------------------------------------
-# home folder
-homefold = os.getenv('XDG_HOME')																	#try XDG_HOME
-if homefold == None:
-	homefold = os.getenv('HOME')																		#if not try HOME
-if homefold == None:
-	sys.exit('Cannot find homefold')																#if not, exit
-homefold = homefold + '/'
-
-#-------------------------------------------------------------
-# configuration folder for preference file
-configfold = os.getenv('XDG_CONFIG_HOME')									#try XDG_CONFIG_HOME
-if configfold == None:
-	if not os.path.exists(homefold + '.config'):						#if  not, try .config
-		sys.exit('Cannot find .config')												#if not, exit
-	else:
-		configfold = homefold + '.config/popout3d'
-		if not os.path.exists(configfold):										#.config exists find .config/popout3d
-			result = os.system('mkdir ' + configfold) 					#try making .config/popout3d
-			if result !=0:
-				sys.exit('Cannot make .config/popout3d')					#cannot make .config/popout3d so exit		
-configfold = configfold +'/'	
-
-#-------------------------------------------------------------
-# work folder for STOP and image files being processed
-workfold = os.getenv('XDG_DATA_HOME')																		#try XDG_DATA_HOME
-if workfold == None:
-	if not os.path.exists(homefold + '.local/share'):											#if  not, try .local/share
-		sys.exit('Cannot find .local/share')																#if not, exit
-	else:
-		if not os.path.exists(homefold + '.local/share/popout3d'):					#find ...popout3d
-			result = os.system('mkdir ' + homefold + '.local/share/popout3d')	#try making it
-			if result != 0:
-				sys.exit('Cannot make .local/share/popout3d')										#if not, exit			
-		workfold = homefold +'.local/share/popout3d/data'										#ok so set to ....data	
-
-if os.path.isdir(workfold):											#if it exists, remove workdir and its files
-	shutil.rmtree(workfold, True)
-
-result = os.system('mkdir ' + workfold)					#try making work directory
-if result !=0:
-	sys.exit('Cannot make work directory')			#cannot make work directory so exit			
-
-workfold = workfold +'/'	
-
-#Meson created directories------------------------------------
-'''
-Directories from Meson, if program isn't installed they won't exist. 
-To run it as a deb or RPM would require altering meson.build
-
-Mdatafold	source of read-only files like icons and grey image.
-Mlocale   source of language files
-'''
-# Mdtafold is project folder (read-only) for dummy image and blank image
-# Mlocale is localisation folder for translation files
-if os.path.exists('/.flatpak-info'): # Is it a Flatpak? This is within the sandbox so can't be seen
-	Mdatafold = '/app/share/popout3d/'
-	Mlocale = '/app/share/locale/' 			# gettext will add {language}/LC_MESSAGES to Mlocale
-else: # no package for testing
-	Mdatafold = '/home/chris/git/popout3d/'
-	Mlocale = '/home/chris/git/locale/'	# gettext will add {language}/LC_MESSAGES to Mlocale
+# (RPM and AppImage set logofile, Snap didn't) out-of-date
+if environment == 'terminal':
+	homefold		= os.getenv('HOME')
+	workfold		= os.getenv('XDG_RUNTIME_DIR')
+	configfold	= homefold  + '/git/testdirs/home/.config'
+	#programfold = homefold + '/git/testdirs/usr/share/popout3d' NBG
+	programfold = homefold  + '/git/testdirs/usr/share/popout3d'
+	localefold	= homefold  + '/git/testdirs/usr/share/locale'	
+	#logofile = 'popout3d'
 	
-#locale-----------------------------------------------------
-locale.setlocale(locale.LC_ALL, '') # For words in GTK4 itself, locale to users default language (otherwise might be C/POSIX locale)
-# To test GTK4 built-in words, use this in Bash: export LC_ALL=nl_NL.UTF-8
-language = locale.getlocale()[0]
-#language = 'nl_NL' # test
-#language = 'de_DE' # test
-lang = gettext.translation('popout3d', localedir=Mlocale, languages=[language], fallback=True)
+elif environment == 'rpm':
+	homefold 		= os.getenv('HOME')
+	workfold		= os.getenv('XDG_RUNTIME_DIR')
+	configfold 	= homefold + '/.config/popout3d'  # as XDG_CONFIG_HOME is None
+	programfold = '/usr/share/popout3d'						# as XDG_DATA_HOME is None
+	localefold  = '/usr/share/locale'							# as XDG_DATA_HOME is None
+	
+elif environment == 'flatpak':
+	homefold 		= os.getenv('HOME')
+	workfold		= os.getenv('XDG_RUNTIME_DIR')
+	configfold 	= os.getenv('XDG_CONFIG_HOME')
+	programfold = '/app/share/popout3d'
+	localefold  = '/app/share/locale'
+	#logofile = 'popout3d' #AppImage
+	
+elif environment == 'snap': #FROM SNAPFILE
+	homefold 		= os.getenv('SNAP_REAL_HOME')
+	workfold		= os.getenv('XDG_RUNTIME_DIR')
+	configfold 	= os.getenv('XDG_CONFIG_HOME')
+	snap_path 	= os.getenv('SNAP', '/')  # Default to '/' when not running in Snap
+	programfold = os.path.join(snap_path, 'usr/share/popout3d') #OK
+	localefold 	= os.path.join(snap_path, 'usr/share/locale')		#OK
+	x = os.path.expanduser("~/.config/"); print('>>>',x,'<<<')	
+	#configfold = os.path.expanduser("~/.config/")
+
+	#logofile 		= 'popout3d'
+	#logofile = 'com.github.PopoutApps.popout3d' #FROM AppImage file
+ 	
+	#elif environment == 'snap': #FROM RPM FILE
+	#	homefold 		= os.getenv('SNAP_REAL_HOME')
+	#	workfold		= os.getenv('XDG_RUNTIME_DIR')
+	#	configfold 	= os.getenv('XDG_CONFIG_HOME')
+	#	#programfold = '/snap/popout3d/current/usr/share'
+	#	programfold = 'SNAP/usr/share/popout3d'
+	#	#localefold 	= '/snap/popout3d/current/usr/share/locale'	#localefold 	= 'SNAP/usr/share/popout3d/locale'
+	#	locale_folder = os.path.join(os.environ["SNAP"], "usr", "share", "locale")
+
+	#	logofile 		= 'popout3d'
+
+else:
+  sys.exit('Cannot work out environment: ', environment)
+
+homefold = homefold + '/'
+workfold = workfold + '/'
+configfold = configfold +'/'	
+programfold = programfold + '/'
+localefold = localefold + '/'
+
+if test:
+	print('------------------------------------------------------')
+	print('Environment:\t', environment)
+	print('HOME\t\t', os.getenv('HOME'), os.getenv('SNAP_REAL_HOME'))
+	print('CONFIG\t\t', os.getenv('XDG_CONFIG_HOME'))
+	print('RUNTIME\t\t', os.getenv('XDG_RUNTIME_DIR'))
+	print('DATA\t\t', os.getenv('XDG_DATA_HOME'))
+	print('')
+	print('homefold:\t', homefold)
+	print('configfold:\t', configfold)
+	print('workfold:\t', workfold)
+	print('programfold:\t', programfold)
+	print('localefold:\t', localefold)
+	print('------------------------------------------------------')
+	#TEST = os.getenv('SNAP_USER_COMMON'); print('<<<<<',TEST,'>>>>>')
+	x = os.path.expanduser("~/.config/"); print(x)
+
+'''
+CONTROL FILES, WILL THEY BE HERE NEXT RUN? - NOT SURE THEY SHOULD BE HERE?	These arent permanent but need to be kept between sessions (1 does anyway)
+Correct places?
+	if os.path.isdir(workfold):											#if it exists, remove workdir and its files
+		shutil.rmtree(workfold, True)
+
+	result = os.system('mkdir ' + workfold)					#try making work directory
+	if result !=0:
+		sys.exit('Cannot make work directory')			#cannot make work directory so exit			
+
+'''
+
+#locale-------------------------------------------------------------------------
+locale.setlocale(locale.LC_ALL, '')
+language = locale.getlocale()[0] 
+lang = gettext.translation('popout3d', localedir=localefold, languages=[language], fallback=True)
 _ = lang.gettext
 
 # Help pages -------------------------------------------------------------------
+#44 Revised help text and one command text.
+
 helpPage = []
 
 # Basics -----------------------------------------------------------------------
-helpPage.append(_('''Take two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same thing and take another. Copy them to your PC, then rename them so that they have exactly the same name, but add an "L" at the end of the left-hand one, add an "R" to the end of the right-hand one. For example photoL.JPG and photoR.JPG.
+helpPage.append(_('''You need two photos of a stationary subject. Take one, then move the camera about 60mm to the right but pointing at the same part of the subject and take another. Copy them to your PC, then rename them so that they have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG.
 
-Open Popout3D and select one of these photos with Open>File. Click Queue to see which 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
+Open Popout3D and select one of these photos with Open>File. Click Queue to see what 3D images will be created. The button changes to Process. Click Process to start processing. The button changes to Reset. If you use the < and > arrows, you will see a grey rectangle while the image is being created. When the 3D image is ready, it will be displayed if you use the arrows. This can take about half a minute.
 
-You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without the goggles.'''))
+You will need 3D glasses to see anaglyph images. You will need 3D Virtual Reality goggles to see side-by-side images. Some people can see side-by-side or crossover images without goggles.
+
+Popout3D Forum https://popout3d.proboards.com/'''))
 
 # Source Files -----------------------------------------------------------------
-helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right but pointing at the same thing, and take another. Always take them in sequence from left to right, so you don't get them mixed up. Popout3D may not be able to read/write image files on your camera or mobile phone and the 3D images you create will need extra space, so it's best to copy your original photos onto your PC. It is also easier to rename the photos on your PC. Rename them so that they have exactly the same name, but add an "L" at the end of the left-hand one, and add an "R" to the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the spacing right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
+helpPage.append(_('''Choose a stationary subject. Take one photo, then move the camera about 60mm to the right, point it at the same part of the subject, and take another. Always take them in sequence from left to right, so you don't get them mixed up. It's best to copy your original photos onto your PC to process them. Rename them so that they both have the same name, but with an "L" at the end of the left-hand one and an "R" at the end of the right-hand one. For example photoL.JPG and photoR.JPG. If you find it difficult to get the camera postion right, you can take 3 or more photos at different separations. Name them in order from left to right in numerical order, for example photo1.jpg, photo2.jpg and photo3.jpg. Don't take too many, as this results in creating a large number of 3D images, which will take a long time to process.
 
-Each set of images (all those for the same subject) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
+Each set of images (all those intended for the same 3D image) must be in the same format with the same file-extension - .jpg, .png or .tiff. They must be exactly the same size in pixels.
 
 Movement
-Stationary objects like buildings or scenery give good results. Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may be work in the right circumstances, for example if there isn't too much wind, and the water is placid. Moving vehicles or people, or fast-flowing water like a waterfall or waves won't work.
+Stationary objects like buildings or scenery give good results. Pictures of people should work, provided they can keep still for a few seconds. Objects like trees and water may work in the right circumstances, for example if there isn't too much wind, and the water is placid. Moving vehicles, people or animals, or fast-flowing water like a waterfall or waves won't work.
 
 Quality of Effect
 A picture with objects at varying distances results in a convincing effect. Distant scenery won't work well, as there is little perspective effect anyway.
 
 Notes
-Some images are too difficult for the aligning software, and the resulting image is unusable.
+Some images are too difficult for the aligning software, the result will just be a blank grey square.
 
-For Anaglyph 3D avoid images with all red or all cyan objects. They will look odd as they only appear in one eye.
+For Anaglyph 3D, avoid images with all red or all cyan objects. They will look odd as they will only appear in one eye.
 
-Because the 2D images must have exactly the same width and height in pixels, editing them is difficult. It can be done with a photo editor like rawTherapee, which shows you the size that the edited image will have, so you can make them match. It is easier to edit the 3D image, although you can't crop Side-By-Side or Crossover ones.
+Cropping images - for Anaglyph 3D it is easiest to edit the 3D image. For Side-By-Side or Crossover ones you cannot do this, so you must crop the original 2D images. This can be difficult, because you must ensure that the edited photos have exactly the same height and width in pixels. You also need to keep most of the same content in both images without losing the difference in view point.
 
 Nearby objects can cause strange effects when the camera's depth of field is high. A shorter exposure will reduce the depth of field.'''))
 
 # File Selection----------------------------------------------------------------
 helpPage.append(_('''File
-To process a single set of images which are all for the same subject, first use Open>File to choose any file from the set.
+To process a single set of 2D images which will all be used for the same 3D image, first use Open>File to choose any file from the set.
 
 scenery1.jpg
 scenery2.jpg
 scenery3.jpg
 
-Selecting any of these files will prepare you to process all of them. The program will create a 3D image for each pair of originals, so you are able to choose the best combination of images for left and right. It is not recommended to use more than 3 originals as the number of output images goes up dramatically:
+Selecting any of these files will prepare you to process all of them. The program will create a 3D image for each pair of originals, so you are able to choose the best. It is not recommended to use more than 3 originals as the number of output images goes up dramatically:
 
 2 originals produce 1 3D image
 3 originals produce 3 3D images
 4 originals produce 6 3D images
 5 originals produce 10 3D images
 
-All the 3D images get the same filename (except the final character) and extension as the originals, plus two digits and a letter each for the format and style. These examples are "Anaglyph" format with "Normal" style:
+All the 3D images in the set will get the same original filename as the originals with the final characters from both, followed by a letter for the 3D format and a letter for the style.
 
-scenery12AN.jpg was made with scenery1.jpg for the left image and scenery2.jpg for the right.
-scenery13AN.jpg was made with scenery1.jpg for the left image and scenery3.jpg for the right.
-With images ending in L and R you would get sceneryLRAN.jpg.
+These examples are "Anaglyph" format with "Normal" style:
+
+scenery12AN.jpg was made from scenery1.jpg for the left image and scenery2.jpg for the right.
+scenery13AN.jpg was made from scenery1.jpg for the left image and scenery3.jpg for the right.
+
+Images ending in L and R would give sceneryLRAN.jpg.
 
 Folder:
-To process all the image sets in a folder, first use Open>Folder to choose the folder with the sets of images.'''))
+To process all the image sets in a folder, use Open>Folder.'''))
 
 # Options for 3D Images --------------------------------------------------------
 helpPage.append(_('''The format of the 3D image may be:
 
 Anaglyph
-A red/cyan colour 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
+A red/cyan coloured 3D image viewed with coloured spectacles. These are available very cheaply on the Web.
 
 Side-by-side
-A side-by-side 3D image viewed straight ahead. left-hand image on the left, right-hand on the right. Some people can see these without a viewer, some can't.
+A side-by-side 3D image with the left-hand image on the left, the right-hand on the right. Some people can see these without a viewer, some can't.
 
 Crossover
-A side-by-side 3D image viewed with eyes crossed. right-hand image on the left, left-hand on the right. Some people can see these without a viewer, some can't.
+A side-by-side 3D image viewed with eyes crossed. The right-hand image is on the left, the left-hand on the right. Some people can see these without a viewer, some can't.
 
 There are two styles available:
 
@@ -262,49 +326,49 @@ Normal
 A normal 3D image with the front of the picture level with the screen.
 
 Popout
-A "popout" image. In some cases the effect is startling, as the front of the 3D image will popout in front of the screen. In most cases there is little or no difference from "Normal".
+A "popout" image. In some cases the effect is startling, as the front of the 3D image will stand out in front of the screen. In most cases there is little or no difference from "Normal".
 
 Aligned 2D images
-The processing creates aligned versions of left and right images, which are then merged into a 3D image. These two images are only temporary. If you want to try your own method of creating and displaying 3D images, you can save these two images by selecting "Aligned 2D Images > Save". They have names like PhotoL(LRSN).tif, the "PhotoL" refers to the original left-hand image. The "-LRSN" refers to the 3D image for which they were created. The "S" is irrelevant, but the "P" indicates that you a 3D image you make from it will be a popout one.'''))
+The processing creates aligned versions of the left and right images, which are then merged into a 3D image. These two images are only temporary. If you want to use them to try your own method of creating and displaying 3D images, you can save them by selecting "Aligned 2D Images>Save". They will remain after the processing has finished. They will have names like PhotoL(LRP).tif, the "LR" refers to the final identifying characters from the two original images. The "P" indicates that any 3D image you make from them will be a popout one.'''))
 
 # Processing -------------------------------------------------------------------
-helpPage.append(_('''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and rotationally. This is a vital step and it is very difficult to achieve when holding the camera and even when using image editing software. The program does this for you, it may take about 20 seconds per 3D image.
+#44 removed suggestion of trying Hugin.
+helpPage.append(_('''For the 3D effect to work it is essential that each pair of images is perfectly aligned vertically and in rotation. This is very difficult to achieve when holding a camera and even by editing the 2D images. This program does it for you, it may take about 20 seconds per 3D image.
 
-An existing 3D image file will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing 3D image.
+An existing 3D image will not be overwritten. Therefore if you wish to recreate a 3D image, you will first need to move, rename or delete the existing one.
 
 To start processing the selected images, click on "Queue", this will show a list of the images to be created in the panel to the left and the button will change to "Process". If you don't like the list, choose another File/Folder or Format/Style.
-If you are happy with this list, press "Process", the button will change to "Reset". You can use the < and > buttons to look for completed 3D images. Only the recently processed images are shown. When you have finished checking them, press "Reset" to go back to the File or Folder selection, now including the new images. Using the Open menu or the Delete or process buttons will also reset the list.
+If you are happy with list of images in the queue, press "Process", the button will change to "Reset". You can use the < and > buttons to look for completed 3D images. Only the recently processed images are shown. When you have finished checking them, press "Reset" to go back to the File or Folder selection, now including both old and new images. Using the Open menu or the Delete or process buttons will also reset the list.
 
 Notes
-Portrait images from a mobile phone may be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
+Portrait images from a mobile phone may actually be landscape photos with a rotation tag, the program rotates them to portrait for processing, but it doesn't change the originals.
 
-Mobile mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
+Mobile phones from one manufacturer are suspected of producing 16:9 photos which do not conform to JPG standards.
 
-The 3D images won't have valid EXIF tags.
+The 3D images won't have valid EXIF tags - date and so on.
 
 Settings from previous versions of the program are not loaded.
 
-If you can't remember which image was left and which was right, create a 3D image as usual. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image.
-
-You can run Hugin yourself to experiment with other settings, it is available as a Flatpak.'''))
+If you can't remember which image was the left-hand one and which was the right-hand one, create an anaglyph 3D image. If it doesn't look right, try the glasses on upside down, so the lenses swap sides. If the image now works rename the 2D images and create a new 3D image. You can do something similar with Side-by-Side and Crossover images.
+'''))
 
 # View -------------------------------------------------------------------------
 helpPage.append(_('''Scroll backwards and forwards through the images using < and >.
 
 All
-All the images in the chosen folder or set which follow the naming rules will be shown.
+All the images in the chosen set or folder which follow the naming rules will be shown.
 
 2D
-Only 2D images in the chosen folder or set which follow the naming rules will be shown.
+Only 2D images in the chosen set or folder which follow the naming rules will be shown.
 
 3D
-Only 3D images in the chosen folder or set which follow the naming rules will be shown.
+Only 3D images in the chosen set or folder which follow the naming rules will be shown.
 
 Triptych
 3D images will be shown at the top with the 2D images they were made from shown beneath.
 
 3D Image Types
-These selections only affect 3D/Triptych views (see Processing for explanations). If you have created more than one type of 3D image, you won't need to change viewing devices as you browse the images, as these buttons allow you to restrict which image types are shown.
+These selections only affect 3D/Triptych views (see Processing for explanations). If you have created more than one type of 3D image, these buttons allow you to show only one type at a time.
 
 Delete
 If a 3D image is being displayed you may delete it. To ensure that you don't lose original images, 2D images cannot be deleted from within Popout3D. You could of course delete them using your file manager.
@@ -332,13 +396,179 @@ tipSidebyside	= _('A 3D image with the left-hand image on the left and the right
 tipCrossover	= _('A 3D image with the left-hand image on the right and the right-hand image on the left')
 tipNormal 		= _('A normal 3D image')
 tipPopout			= _('A 3D image which may appear to stand out in front of the screen')
-tipRetain			= _('Save the aligned 2D images which were created by align-image-stack') #43
+tipRetain			= _('Save the aligned 2D images') #43, 44
 
 #===============================================================================
-def on_close_request(app): # When window is closed with X
-	with open(workfold + stopfile, 'w') as fn:			
-		fn.write('STOP'+'\n')
-		fn.close()
+#def on_close_request(app): # When window is closed with X
+#44
+def on_close_request(*args):
+	global stop_event
+	if stop_event:
+		stop_event.set()
+	return False  # allows GTK to actually close the window
+
+	#with open(workfold + stopfile, 'w') as fn:			
+	#	fn.write('STOP'+'\n')
+	#	fn.close()
+
+def processPairlist(stop_event, pairlist, myfold, workfold): #44 added everything after pairlist
+	#global warnings
+	#local tagL, tagR, foldL, foldR foldL and foldR are for when a portrait needs rotating
+	#local log
+	
+	#44
+	#with open(workfold + runningfile, 'w') as fn:			
+	#	fn.write('RUNNING'+'\n')
+	#	fn.close()
+	if test:
+		print()
+	for record in pairlist:
+		#44
+		#if os.path.isfile(workfold+stopfile): 
+		#	break
+		if stop_event.is_set():
+			print("Processing stopped by user")
+			break			
+		else:	
+			newfile = record[0]; leftn = record[1]; rightn = record[2]; newformatcode = record[3]; newstylecode = record[4]; newext = record[5]; tagL = record[6]; tagR = record[7]
+		
+			# make filenames then call align_image_stack
+			fileout	= newfile+leftn+rightn+newformatcode+newstylecode+'.'+newext
+			fileleft	= newfile+leftn+'.'+newext
+			fileright = newfile+rightn+'.'+newext
+
+			# turn image if needed and put into workfold
+			foldL = foldR = myfold	
+
+			if test:
+				print(myfold, workfold, fileout, fileleft, fileright)
+
+			if tagL in ['3', '6', '8']: # rotate image	
+				if os.path.isfile(myfold+fileleft):
+					try:
+						image = Image.open(myfold+fileleft)
+						image = ImageOps.exif_transpose(image)
+						#image.save(workfold+fileleft, quality=95, subsampling='4:4:4')
+						if newext in tifext:
+							image.save(workfold+fileleft) 
+						else:
+							image.save(workfold+fileleft, quality=95, subsampling='4:4:4')
+						foldL = workfold
+					except:
+						pass	
+
+			if tagR in ['3', '6', '8']: # rotate image	
+				if os.path.isfile(myfold+fileright):
+					try:
+						image = Image.open(myfold+fileright)
+						image = ImageOps.exif_transpose(image)
+						#image.save(workfold+fileright, quality=95, subsampling='4:4:4')
+						if newext in tifext:
+							image.save(workfold+fileright) 
+						else:
+							image.save(workfold+fileright, quality=95, subsampling='4:4:4')
+						foldR = workfold	
+					except:
+						pass	
+		
+			#replace A and P with styleAIS
+			if stylecode == 'N':		
+				styleAIS = 'A'
+			else:
+				styleAIS = 'P'
+
+			if test:
+				print(foldL+fileleft, foldR+fileright, workfold+fileout)
+			command = 'align_image_stack -S -C -i --align-to-first --use-given-order -'+styleAIS+' -a '+workfold+fileout+' '+foldR+fileright+' '+foldL+fileleft #43
+				
+			args = shlex.split(command) 
+		
+			print('Aligning'+' ', workfold+fileout) # For checking which files cause the problem #43
+			#result = os.system(command) #44			
+			log = os.path.join(workfold, logfile)
+			result = subprocess.run(
+				command,
+				shell=True,
+				stdout=subprocess.DEVNULL,                # discard normal output
+				stderr=open(log, "a"),                # append errors to a log file
+				start_new_session=True                     # detach from terminal
+				)
+ 		
+			# remove turned images if they exist
+			if os.path.isfile(workfold+fileleft):
+				os.remove(workfold+fileleft)
+			if os.path.isfile(workfold+fileright):
+				os.remove(workfold+fileright)
+
+			# align_image_stack has worked
+			#if result == 0: #44
+			if result.returncode == 0:
+
+				# load left and right images
+				image_left = Image.open(workfold+fileout+'0001.tif')
+				image_right = Image.open(workfold+fileout+'0000.tif')
+
+				# merge the files, put result in myfold
+				if formatcode == 'A': # Anaglyph			
+					Lred	 = image_left.getchannel('R')
+					Rgreen = image_right.getchannel('G')
+					Rblue	 = image_right.getchannel('B')
+
+					#43 easter egg for anaglyph colour balance (not working)
+					#if balance != 1:			
+					#	Lred = Lred.point	(lambda i: i * balance)
+					#	Rgreen = Rgreen.point	(lambda i: i * 1/balance)
+					#	Rblue = Rblue.point	(lambda i: i * 1/balance)
+
+					# merge the 3 colours
+					image_new = Image.merge('RGB', (Lred, Rgreen, Rblue))
+			
+				elif formatcode == 'S': # Side-by-Side
+					image_width = int(image_left.size[0]) ; image_height = int(image_left.size[1])
+					# create double-width blank new image
+					image_new = Image.new('RGB', (image_width * 2, image_height), color=0)
+					# paste left image into new image on the left
+					image_new.paste(image_left, (0, 0, image_width, image_height))
+					# paste right image into new image on the right
+					image_new.paste(image_right, (image_width, 0, 2 * image_width, image_height))
+
+				else : # Crossover
+					image_width = int(image_left.size[0]) ; image_height = int(image_left.size[1])
+					# create double-width blank new image
+					image_new = Image.new('RGB', (image_width * 2, image_height), color=0)
+					# paste right image into new image on the left
+					image_new.paste(image_right, (0, 0, image_width, image_height))
+					# paste left image into new image on the right
+					image_new.paste(image_left, (image_width, 0, 2 * image_width, image_height))
+
+				# attempt to avoid fringing but subsampling doesn't work for TIF files
+				if newext in tifext:
+					image_new.save(myfold+fileout) 
+				else:
+					image_new.save(myfold+fileout, quality=95, subsampling='4:4:4')
+
+				# close delete input and delete intermediate files 
+				image_left.close ; image_right.close
+ 
+ 				#DIFF IF POPOUT IS REMOVED, +newformatcode should be removed
+				if test:
+					print('Retain: ', retain)
+				if os.path.isfile(workfold+fileout+'0001.tif'):
+					if retain: #43
+						shutil.copy(workfold+fileout+'0001.tif', myfold+newfile+leftn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
+					os.remove(workfold+fileout+'0001.tif')
+				if os.path.isfile(workfold+fileout+'0000.tif'):
+					if retain: #43
+						shutil.copy(workfold+fileout+'0000.tif', myfold+newfile+rightn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
+					os.remove(workfold+fileout+'0000.tif') 
+						
+			else:
+				print('Could not align error: ' + str(result) + ' ' + fileout + '\n' ) # warnings = warnings + 'It was not possible to align '+fileout+'.\n'  #43
+	#44	
+	#if os.path.isfile(workfold+runningfile):
+	#		os.remove(workfold+runningfile)
+
+	print('Finished') #43
 
 def on_activate(app):
 	global viewind, process
@@ -416,7 +646,7 @@ def on_activate(app):
 	def showDelete():
 		message = Gtk.MessageDialog(title = _('Are you sure?'), 
 			text = _('This will delete') +' ' + viewlist[viewind][0]+'.'+viewlist[viewind][1])
-		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Delete'), Gtk.ResponseType.OK)  #43
+		message.add_buttons(_('Cancel'), Gtk.ResponseType.CANCEL, _('Delete'), Gtk.ResponseType.OK) #43
 		message.set_transient_for(win); message.set_modal(win)		
 		message.set_default_response(Gtk.ResponseType.OK)
 		message.connect('response', ask, 'delete')
@@ -432,17 +662,23 @@ def on_activate(app):
 		
 	def showAbout(action, button):
 		message = Gtk.AboutDialog(transient_for=win, modal=True)
-		message.set_logo_icon_name('com.github.PopoutApps.popout3d')
+		# Comes from the standard icon so no need for directory
+		message.set_logo_icon_name(logofile) # logofile MUST NOT HAVE .png on the end! from RPM. # MUST NOT HAVE directory name or .png on the end! from Snap
 		message.set_program_name('Popout3D')
 		message.set_version(version)
 		message.set_comments(_('Create a 3D image from ordinary photographs'))
 		message.set_website_label('Popout3D ' + _('on') + ' GitHub')
 		message.set_website('https://github.com/PopoutApps/popout3d')
-		message.set_copyright(_('Copyright') + ' 2022, 2023 Chris Rogers')
+		message.set_copyright(_('Copyright') + ' 2022 - 2026 Chris Rogers')
 		message.set_license_type(Gtk.License.GPL_3_0)
-		message.set_authors(['PopoutApps'])
-		message.add_credit_section(section_name=_('Image Alignment'), people=['align-image-stack']) #43
-		message.add_credit_section(section_name='Flatpak', people=['Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards'])
+		message.set_authors(['PopoutApps']) # Shows under 'Created by' probably translated by GTK.
+		message.add_credit_section(section_name=_('Image Alignment'), people=['Hugin']) 
+		
+		message.add_credit_section(section_name='Flatpak', people=['"chrisawi"', 'Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards'])
+		if environment == 'snap': #44
+			message.add_credit_section(section_name=_('Snap Package'), people=['ChatGPT'])
+		elif environment == 'rpm': #44
+			message.add_credit_section(section_name=_('RPM Package'), people=['ChatGPT'])
 		message.set_visible(True)
 
 	def	showHelp(action, button):
@@ -463,7 +699,7 @@ def on_activate(app):
 		global version, myfold, myfile, myext, formatcode, stylecode, viewDim, scope, viewType, firstrun, retain, balance #43
 		# local okpref, okcol, ver, i
 		# Preference file is not present when program is installed, so shows whether this is the first run.
-	
+
 		# create settings array
 		prefdata = []
 		for i in range(10): #43
@@ -530,12 +766,12 @@ def on_activate(app):
 			else:
 				retain = False
 
-			try: #43
-				balance = float(prefdata[9]) #43
-				if not (balance >= .5 and balance <= 1.5):
-					balance = 1
+			try: #44
+				balance = real(prefdata[9])
+				if not (balance >= 75 and balance <= 125):
+					balance = 100.0
 			except:
-				balance = 1
+				balance = 100.0
 
 		if okpref:
 			firstrun = False
@@ -549,7 +785,7 @@ def on_activate(app):
 			viewDim = 'All'
 			viewType = 'ASCNP'
 			retain = False #43
-			balance = 1 #43
+			balance = 100.0 #43
 		
 			# write pref file anyway in case mydir/myfile have been deleted or any other problem
 			with open(configfold + settingsfile, 'w') as fn:			
@@ -567,7 +803,7 @@ def on_activate(app):
 					fn.write('False\n') #43
 				fn.write(str(balance)+'\n') #43
 
-			print('<<',balance,'>>')
+			print('<<< balance: ',balance,'>>>') #44
 
 	#-----------------------------------------------------------------------------		 
 	def exif(newfilename, newext):
@@ -578,7 +814,7 @@ def on_activate(app):
 		global pixbuf, error
 		# local orientationTag
 
-		orientationTag = 'None'
+		orientationTag = '' #44 was 'None' which was confusable with None
 		if os.path.isfile(myfold+newfilename+'.'+newext):
 			try:
 				image = Image.open(myfold+newfilename+'.'+newext)
@@ -787,6 +1023,10 @@ def on_activate(app):
 		if queuing:
 			# add all relevant images to viewlist
 			for record in pairlist:
+				# Graceful stop request #44
+				if stop_event.is_set():
+					print("Stop requested")
+					break		
 				#viewlist.append([record[0]+record[1], record[5], '2D', record[6]])		
 				viewlist.append([record[0]+record[1]+record[2]+record[3]+record[4], record[5], '3D', ''])	
 				#viewlist.append([record[0]+record[2], record[5], '2D', record[7]])		
@@ -861,7 +1101,7 @@ def on_activate(app):
 				and viewlist[viewind][0][-2] in viewType and viewlist[viewind][0][-1] in viewType
 				)
 			or
-				(viewDim in ('All', '2D') and viewlist[viewind][2] == '2D')   
+				(viewDim in ('All', '2D') and viewlist[viewind][2] == '2D')
 			):
 
 			if viewlist[viewind][2] == '2D': #43 greyout delete button for 2D images
@@ -885,11 +1125,11 @@ def on_activate(app):
 					elif orientationL == '8': #top pointing left so rotate 90 clockwise
 						pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameL+'.'+newextL), 90)
 					elif orientationL == 'notfound':
-						pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
+						pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile)
 					else:
 						pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameL+'.'+newextL)
 				else:
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
+					pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile)
 
 				imageL = Gtk.Picture.new_for_pixbuf(pixbuf)
 				imageL.props.hexpand = True	
@@ -909,11 +1149,11 @@ def on_activate(app):
 					elif orientationR == '8': #top pointing left so rotate 90 clockwise
 						pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameR+'.'+newextR), 90)
 					elif orientationR == 'notfound':
-						pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
+						pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile)
 					else:
 						pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilenameR+'.'+newextR)
 				else:
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile) 
+					pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile) 
 
 				imageR = Gtk.Picture.new_for_pixbuf(pixbuf)
 				imageR.props.hexpand = True	
@@ -933,14 +1173,14 @@ def on_activate(app):
 				elif orientation1 == '8': #top pointing left so rotate 90 clockwise
 					pixbuf = GdkPixbuf.Pixbuf.rotate_simple(GdkPixbuf.Pixbuf.new_from_file(myfold+newfilename1+'.'+newext1), 90)
 				elif orientation1 == 'notfound': # file missing #redundant
-					pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
+					pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile)
 				else: #already upright or could not be determined
 					pixbuf = GdkPixbuf.Pixbuf.new_from_file(myfold+newfilename1+'.'+newext1)
 			else: # not found
-				pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
+				pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile)
 
 		else:
-			pixbuf = GdkPixbuf.Pixbuf.new_from_file(Mdatafold+dummyfile)
+			pixbuf = GdkPixbuf.Pixbuf.new_from_file(programfold+blankfile)
 
 		image1 = Gtk.Picture.new_for_pixbuf(pixbuf)
 		image1.props.hexpand = True; image1.props.vexpand = True
@@ -985,153 +1225,26 @@ def on_activate(app):
 			showInfo(warnings)
 
 	#-----------------------------------------------------------------------------
-	def processPairlist(pairlist):
-		#global warnings
-		#local tagL, tagR, foldL, foldR
+	#def processPairlist(pairlist): WAS HERE
 	
-		with open(workfold + runningfile, 'w') as fn:			
-			fn.write('RUNNING'+'\n')
-			fn.close()
-
-		for record in pairlist:
-			if os.path.isfile(workfold+stopfile):
-				break
-			else:	
-				newfile = record[0]; leftn = record[1]; rightn = record[2]; newformatcode = record[3]; newstylecode = record[4]; newext = record[5]; tagL = record[6]; tagR = record[7]
-		
-				# make filenames then call align_image_stack
-				fileout	= newfile+leftn+rightn+newformatcode+newstylecode+'.'+newext
-				fileleft	= newfile+leftn+'.'+newext
-				fileright = newfile+rightn+'.'+newext
-
-				# turn image if needed and put into workfold
-				foldL = foldR = myfold	
-				if tagL in ['3', '6', '8']: # rotate image	
-					if os.path.isfile(myfold+fileleft):
-						try:
-							image = Image.open(myfold+fileleft)
-							image = ImageOps.exif_transpose(image)
-							#image.save(workfold+fileleft, quality=95, subsampling='4:4:4')
-							if newext in tifext:
-								image.save(workfold+fileleft) 
-							else:
-								image.save(workfold+fileleft, quality=95, subsampling='4:4:4')
-							foldL = workfold
-						except:
-							pass	
-
-				if tagR in ['3', '6', '8']: # rotate image	
-					if os.path.isfile(myfold+fileright):
-						try:
-							image = Image.open(myfold+fileright)
-							image = ImageOps.exif_transpose(image)
-							#image.save(workfold+fileright, quality=95, subsampling='4:4:4')
-							if newext in tifext:
-								image.save(workfold+fileright) 
-							else:
-								image.save(workfold+fileright, quality=95, subsampling='4:4:4')
-							foldR = workfold	
-						except:
-							pass	
-		
-				#replace A and P with styleAIS
-				if stylecode == 'N':		
-					styleAIS = 'A'
-				else:
-					styleAIS = 'P'
-
-				command = 'align_image_stack -S -C -i --align-to-first --use-given-order -'+styleAIS+' -a '+workfold+fileout+' '+foldR+fileright+' '+foldL+fileleft #43
-				
-				args = shlex.split(command) 
-		
-				print('Aligning'+' ', workfold+fileout) # For checking which files cause the problem #43
-				result = os.system(command)
- 		
-				# remove turned images if they exist
-				if os.path.isfile(workfold+fileleft):
-					os.remove(workfold+fileleft)
-				if os.path.isfile(workfold+fileright):
-					os.remove(workfold+fileright)
-
-				# align_image_stack has worked
-				if result == 0: 
-					# load left and right images
-					image_left = Image.open(workfold+fileout+'0001.tif')
-					image_right = Image.open(workfold+fileout+'0000.tif')
-
-					# merge the files, put result in myfold
-					if formatcode == 'A': # Anaglyph			
-						Lred	 = image_left.getchannel('R')
-						Rgreen = image_right.getchannel('G')
-						Rblue	 = image_right.getchannel('B')
-
-						#43 easter egg for anaglyph colour balance
-						if balance != 1:			
-							Lred = Lred.point	(lambda i: i * balance)
-							Rgreen = Rgreen.point	(lambda i: i * 1/balance)
-							Rblue = Rblue.point	(lambda i: i * 1/balance)
-
-						# merge the 3 colours
-						image_new = Image.merge('RGB', (Lred, Rgreen, Rblue))
-			
-					elif formatcode == 'S': # Side-by-Side
-						image_width = int(image_left.size[0]) ; image_height = int(image_left.size[1])
-						# create double-width blank new image
-						image_new = Image.new('RGB', (image_width * 2, image_height), color=0)
-						# paste left image into new image on the left
-						image_new.paste(image_left, (0, 0, image_width, image_height))
-						# paste right image into new image on the right
-						image_new.paste(image_right, (image_width, 0, 2 * image_width, image_height))
-
-					else : # Crossover
-						image_width = int(image_left.size[0]) ; image_height = int(image_left.size[1])
-						# create double-width blank new image
-						image_new = Image.new('RGB', (image_width * 2, image_height), color=0)
-						# paste right image into new image on the left
-						image_new.paste(image_right, (0, 0, image_width, image_height))
-						# paste left image into new image on the right
-						image_new.paste(image_left, (image_width, 0, 2 * image_width, image_height))
-
-					# attempt to avoid fringing but subsampling doesn't work for TIF files
-					if newext in tifext:
-						image_new.save(myfold+fileout) 
-					else:
-						image_new.save(myfold+fileout, quality=95, subsampling='4:4:4')
-
-					# close delete input and delete intermediate files 
-					image_left.close ; image_right.close
- 
-					if os.path.isfile(workfold+fileout+'0001.tif'):
-						if retain: #43
-							shutil.copy(workfold+fileout+'0001.tif', myfold+newfile+leftn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
-						os.remove(workfold+fileout+'0001.tif')
-					if os.path.isfile(workfold+fileout+'0000.tif'):
-						if retain: #43
-							shutil.copy(workfold+fileout+'0000.tif', myfold+newfile+rightn+'('+leftn+rightn+newformatcode+newstylecode+').tif') 
-						os.remove(workfold+fileout+'0000.tif') 
-				else:
-					print('Could not align error: ' + str(result) + ' ' + fileout + '\n' ) # warnings = warnings + 'It was not possible to align '+fileout+'.\n'  #43
-		
-		if os.path.isfile(workfold+runningfile):
-				os.remove(workfold+runningfile)
-
-		print('Finished') #43
-
 	#-----------------------------------------------------------------------------			
 	def buttonPrev(button):
+		global worker
 		findNext('<')		
 		showImage()
 		if process == 'Reset':
-			if os.path.isfile(workfold+runningfile):
+			#if os.path.isfile(workfold+runningfile): #44
+			if worker and worker.is_alive():
 				labelInfoTitle.set_markup('<b>' +_('Processing 3D Images') +'</b>')
 			else:
 				labelInfoTitle.set_markup('<b>' +_('Completed 3D Images') +'</b>')
-	
+
 	def buttonNext(button):
 		findNext('>')	
 		showImage()
 		if process == 'reset':
-			if os.path.isfile(workfold+runningfile):
+			#if os.path.isfile(workfold+runningfile): #44
+			if worker and worker.is_alive():
 				labelInfoTitle.set_markup('<b>' +_('Processing 3D Images') +'</b>')
 			else:
 				labelInfoTitle.set_markup('<b>' +_('Completed 3D Images') +'</b>')
@@ -1268,23 +1381,26 @@ def on_activate(app):
 		else:
 			retain = False
 
-	#-----------------------------------------------------------------------------			
+	#-----------------------------------------------------------------------------		
 	def buttonProcess(button):
 		global warnings, viewDim, pairlist, infolist, viewind, process
 		global viewlist
+		global worker, stop_event   #44
 		# local okleft, okright
 		# pairlist filename style is name less last digit		
+		#44
+		#if os.path.isfile(workfold+runningfile):
+		#	showInfo(_('Please wait for the current processing to finish'))
 
-		# DO NOTHING Still processing
-		if os.path.isfile(workfold+runningfile):
+		if worker and worker.is_alive():
 			showInfo(_('Please wait for the current processing to finish'))
+			return
 
-		# QUEUE empty pairlist - make the list
-		elif process == 'queue': #not reset and pairlist == []:
+		if process == 'queue': #not reset and pairlist == []: #was elif CGPT2026
 			setlist = [];	warnings = ''
 
 			# viewlist record ['DONEtestL', 'png', '2D', '8']
-			# setlist record  ['DONEtest', 'A', 'N', 'jpg']
+			# setlist record ['DONEtest', 'A', 'N', 'jpg']
 			# pairlist record ['DONEtest', 'L', 'R', 'A', 'N', 'jpg', '8', '8']
 						
 			# put one filename for each set into setlist
@@ -1322,9 +1438,17 @@ def on_activate(app):
 
 		# PROCESS
 		else: # Process as list is not empty
-			multi = multiprocessing.Process(target = processPairlist, args=(pairlist,))				
-			multi.start()
-						
+			#44
+			#multi = multiprocessing.Process(target = processPairlist, args=(pairlist,))
+			stop_event = threading.Event()
+			stop_event.clear()
+			worker = threading.Thread(
+				target=processPairlist,
+				args=(stop_event, pairlist, myfold, workfold),
+				daemon=True
+					)
+			worker.start()
+
 			pairlist = []
 			GbuttonProcess.set_label(_('Reset')); process = 'reset'; GbuttonProcess.props.tooltip_text = tipReset
 			GtickView3D.set_active(True)
@@ -1336,8 +1460,8 @@ def on_activate(app):
 	def buttonDelete(button): # was (self, button)
 		global viewind
 		#local ok
-		
-		if os.path.isfile(workfold+runningfile):
+		#if os.path.isfile(workfold+runningfile): #44
+		if worker and worker.is_alive():
 			showInfo(_('Please wait for the current processing to finish'))
 		elif process == 'process':
 			showInfo(_('Cannot delete from queue'))
@@ -1388,16 +1512,35 @@ def on_activate(app):
 			else:
 				showInfo(_('Filename must follow the rules in the Help about File Selection'))
 				return
-
 			win.set_title(myfold + myfile + '*.' + myext)
+							
+		''' #DIFF THIS WAS IN ANOTHER FILE
+		okfile = True			
+		if len(newfile) > 1:
+			if newfile[-1] in okchar: # could be a 2D file
+				myfold = newfold +'/' ; myfile = newfile[:-1]; myext = newext[1:]
+			elif len(newfile) > 3: #44P could be a new style 3D file	
+				if (newfile[-3] in okchar and newfile[-2] in okchar and newfile[-1] in okformat):
+					myfold = newfold +'/' ; myfile = newfile[:-3]; myext = newext[1:] 
+			elif len(newfile) > 4: # could be an old style 3D file
+				if (newfile[-4] in okchar and newfile[-3] in okchar and newfile[-2] in okformat and newfile[-1] in okstyle):
+					myfold = newfold +'/' ; myfile = newfile[:-4]; myext = newext[1:] 
+				else:
+					showInfo(_('Filename must follow the rules in the Help about File Selection'))
+					return
+			else:
+				showInfo(_('Filename must follow the rules in the Help about File Selection'))
+				return
+		'''
+
 			
 		os.chdir(newfold)
 		pairlist = []; GbuttonProcess.set_label(_('Queue')); process = 'queue'; GbuttonProcess.props.tooltip_text = tipQueue
-		scope = 'File'; labelInfoTitle.set_markup('<b>' + _(scope) +  ' ' +_('Selection') +'</b>')
+		scope = 'File'; labelInfoTitle.set_markup('<b>' + _(scope) + ' ' +_('Selection') +'</b>')
 		
 		makeviewlist(False); viewind = 0; findNext('<')
 		if len(viewlist) > 0: #1.5.31
-			if not  (
+			if not	(
 							(viewDim in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
 							or
 							(viewDim in ('All', '2D') and viewlist[viewind][2] == '2D')
@@ -1421,7 +1564,7 @@ def on_activate(app):
 			scope = 'Folder'
 			makeviewlist(False); viewind = 0; findNext('<')
 			if len(viewlist) > 0:
-				if not  (
+				if not	(
 								(viewDim in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D')
 								or
 								(viewDim in ('All', '2D') and viewlist[viewind][2] == '2D')
@@ -1522,13 +1665,13 @@ def on_activate(app):
 	separatorDisplay = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
 
 	for i in (separatorView, separatorProcess, separatorInfo, separatorDisplay):
-	  i.set_margin_top(5); i.set_margin_bottom(10)
+		i.set_margin_top(5); i.set_margin_bottom(10)
 	separatorDisplay.set_margin_end(10)
 
-  # create boxes and images
+	# create boxes and images
 	boxWindow = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 	boxOptions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-	boxDisplay = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)  
+	boxDisplay = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 
 	boxView = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 	boxViewT = Gtk.CenterBox()
@@ -1542,7 +1685,7 @@ def on_activate(app):
 	boxProcessButton = Gtk.CenterBox()
 
 	# put boxes within boxes
-	win.set_child(boxWindow)  # Horizontal box to window
+	win.set_child(boxWindow) # Horizontal box to window
 	boxWindow.append(boxOptions) # Put vert box in that box
 	boxWindow.append(boxDisplay)
 	boxOptions.append(boxView)
@@ -1602,13 +1745,13 @@ def on_activate(app):
 	labelInfo.props.halign = Gtk.Align.START
 
 	# display---------------------------------------------------------------------	
-	boxPrev = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)  
+	boxPrev = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
 	boxImages = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 	boxOuter1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-	boxImagesLR = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)  
+	boxImagesLR = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 	boxOuterL = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-	boxOuterR = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)  
-	boxNext = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)  
+	boxOuterR = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+	boxNext = Gtk.CenterBox(orientation=Gtk.Orientation.VERTICAL)
 	boxLabelImage1 = Gtk.Box(); boxLabelImageL = Gtk.Box(); boxLabelImageR = Gtk.Box()
 	boxImage1 = Gtk.Box(); boxImageL = Gtk.Box(); boxImageR = Gtk.Box()
 
@@ -1630,7 +1773,7 @@ def on_activate(app):
 	
 	# margins---------------------------------------------------------------------
 	for i in (boxView,	boxProcess,	boxInfo, boxImages):
-	  i.set_margin_start(10); i.set_margin_end(10); i.set_margin_top(10)
+		i.set_margin_start(10); i.set_margin_end(10); i.set_margin_top(10)
 	boxImages.set_margin_bottom(10)
 	boxImagesLR.set_margin_top(5)
 	
@@ -1772,7 +1915,7 @@ def on_activate(app):
 	menu2 = Gio.Menu.new()
 	menu2.append(_('Save Settings'), 'win.menuitemSettings')
 	menu2.append(_('Internet Forum'), 'win.menuitemForum')
-	#menu2.append(_('Improve a Translation on Crowdin'), 'win.menuitemLocale')
+	#menu2.append(_('Improve a Translation on Crowdin'), 'win.menuitelocalefold')
 	menu2.append(_('Help'), 'win.menuitemHelp')
 	menu2.append(_('About Popout3D'), 'win.menuitemAbout')
 
@@ -1809,7 +1952,7 @@ def on_activate(app):
 	win.add_action(action)
 
 	# locale
-	#action = Gio.SimpleAction.new('menuitemLocale')
+	#action = Gio.SimpleAction.new('menuitelocalefold')
 	#action.connect('activate', showLocale)
 	#win.add_action(action)
 
@@ -1876,7 +2019,7 @@ def on_activate(app):
 	
 	makeviewlist(False); viewind = 0
 	if len(viewlist) > 0:
-		if not  (
+		if not	(
 						(viewlist[viewind][0][-2] in viewType and viewlist[viewind][0][-1] in viewType
 						and viewDim in('All', '3D', 'Triptych') and viewlist[viewind][2] == '3D'
 						)
@@ -1885,12 +2028,115 @@ def on_activate(app):
 						):
 			findVmatch()
 	showImage()
-	
-	if os.path.isfile(workfold+runningfile):
-		os.remove(workfold+runningfile)
-	if os.path.isfile(workfold+stopfile):
-		os.remove(workfold+stopfile)
+	#Not needed now using signals
+	#if os.path.isfile(workfold+runningfile):
+	#	os.remove(workfold+runningfile)
+	#if os.path.isfile(workfold+stopfile):
+	#	os.remove(workfold+stopfile)
 
-app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
-app.connect('activate', on_activate)
-app.run(None)
+#44 later
+def main():
+    app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
+    app.connect('activate', on_activate)
+    app.run(sys.argv)
+
+if __name__ == "__main__":
+    main()
+
+'''TESTED AND WORKING ON RPM
+#44
+def main():
+    app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
+    app.connect('activate', on_activate)
+    app.run(None)
+
+if __name__ == "__main__":
+    main()
+'''
+#app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
+#app.connect('activate', on_activate)
+#app.run(None)
+'''#DIFF
+	def makeviewlist(queuing):
+		global viewlist, viewind, pairlist
+		#local variables newfile, newext, infolist, tag, ok
+		tag = 'TAG'
+		viewlist = []
+
+		if queuing:
+			# add all relevant images to viewlist
+			for record in pairlist:
+				#viewlist.append([record[0]+record[1], record[5], '2D', record[6]])		
+				viewlist.append([record[0]+record[1]+record[2]+record[3]+record[4], record[5], '3D', ''])	
+				#viewlist.append([record[0]+record[2], record[5], '2D', record[7]])		
+		else:
+			# 2D
+			for newfile in os.listdir(myfold):			 
+				newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]		
+				if len(newfile) > 1:
+					if newext in okext and newfile[-1] in okchar:
+						# set: only add files in set to viewlist
+
+						# file
+						if scope == 'File':
+							if len(newfile) == len(myfile) +1:
+								if newfile[0:-1] == myfile and newext == myext:
+									tag = exif(newfile, newext)
+									viewlist.append([newfile, newext, '2D', tag])
+
+						# folder
+						elif scope == 'Folder':
+							tag = exif(newfile, newext)
+							viewlist.append([newfile, newext, '2D', tag])
+
+			# 3D
+			for newfile in os.listdir(myfold):
+				newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
+				ok = False
+				if len(newfile) > 4: # old style LRAP
+					if (newext in okext
+					and newfile[-4] in okchar and newfile[-3] in okchar 
+					and newfile[-2] in okformat and newfile[-1] in okstyle
+					and newfile[-2] in viewType and newfile[-1] in viewType):
+
+						# file
+						if scope == 'File':
+							if len(newfile) == len(myfile) +4:												 
+								if newfile[0:-4] == myfile and newext == myext:
+									tag = exif(newfile, newext)
+									viewlist.append([newfile, newext, '3D', tag])
+									ok = True
+
+						# folder
+						elif scope == 'Folder':
+							tag = exif(newfile, newext)						
+							viewlist.append([newfile, newext, '3D', tag])
+							ok = True
+
+				if not ok and len(newfile) > 3: #44 new style LRA
+					if (newext in okext
+					and newfile[-3] in okchar and newfile[-2] in okchar
+					and newfile[-1] in okformat and 'N' in okstyle
+					and newfile[-1] in viewType):	
+						print(3)
+						# file
+						if scope == 'File':
+							if len(newfile) == len(myfile) +3:
+								if newfile[0:-3] == myfile and newext == myext:
+									tag = exif(newfile, newext)
+									viewlist.append([newfile, newext, '3D', tag])
+
+						# folder
+						elif scope == 'Folder':
+							tag = exif(newfile, newext)						
+							viewlist.append([newfile, newext, '3D', tag])						
+
+			viewlist = sorted(viewlist)
+
+		# make infolist
+		infolist = ''
+		for i in viewlist:
+			if (i[2] == '2D' and not process == 'reset') or i[2] == '3D':
+				infolist = infolist+i[0]+'.'+i[1]+'\n'
+		labelInfo.set_text(infolist)
+'''		
