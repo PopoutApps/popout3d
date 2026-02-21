@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Popout3D
+Exec=popout3d
+Comment=Create 3D images from photographs
+Icon=com.github.PopoutApps.popout3d
+Type=Application
+Terminal=false
+StartupNotify=true
+Categories=Graphics;Photography;ImageProcessing;
+StartupWMClass=com.github.PopoutApps.popout3d
