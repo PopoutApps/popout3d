@@ -1,8 +1,8 @@
 project('popout3d',
-  version: '1.6.44',
+  version: '1.6.46',
   meson_version: '>= 1.8.5'
 )
-
+# SPDX-License-Identifier: GPL-3.0-or-later
 bindir = get_option('bindir')
 datadir = get_option('datadir')
 pkgdatadir = join_paths(datadir, 'popout3d')

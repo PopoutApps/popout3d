@@ -1,8 +1,9 @@
 #! /usr/bin/python3
-
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Chris Rogers
 
 #RPM icon and logo files are OK, but must test for Flatpak, Snap and AppImage
-test = True
+test = False
 
 '''
 --------------------------------------------------------------------------------
@@ -77,7 +78,7 @@ except ImportError:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.45'							# formatted for "About"
+version = '1.6.46'							# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -122,7 +123,7 @@ snap_path = '' 									# Find Snap package data directory
 homefold = ''										# initial location for looking for photographs.
 configfold = ''									# the Config file.			
 workfold = ''										# temporary images, STOP and RUNNING control files
-datafold = ''										# root of tree for locale and programfold
+#44 NO LONGER USED datafold = ''										# root of tree for locale and programfold
 programfold = ''								# additional program parts
 localefold = ''									# localisation files
 #44
