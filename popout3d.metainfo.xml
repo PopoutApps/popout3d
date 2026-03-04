@@ -17,7 +17,7 @@
   
   
   <releases>
-    <release date="2025-03-01" version="1.6.44">
+    <release date="2026-02-21" version="1.6.45">
       <description>
         <p>
         	Change to using OpenCV for image processing.
