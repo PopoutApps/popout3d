@@ -78,7 +78,7 @@ except ImportError:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.46'							# formatted for "About"
+version = '1.6.47'							# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -141,9 +141,6 @@ elif os.environ.get("_") == "/usr/bin/popout3d":
 else:
 	environment = 'terminal'
 
-if test:
-	print ('<',environment,'>')
-
 # Most environment variables aren't any good
 #	gettext will add {language}/LC_MESSAGES to locale
 
@@ -179,22 +176,6 @@ elif environment == 'snap': #FROM SNAPFILE
 	snap_path 	= os.getenv('SNAP', '/')  # Default to '/' when not running in Snap
 	programfold = os.path.join(snap_path, 'usr/share/popout3d') #OK
 	localefold 	= os.path.join(snap_path, 'usr/share/locale')		#OK
-	x = os.path.expanduser("~/.config/"); print('>>>',x,'<<<')	
-	#configfold = os.path.expanduser("~/.config/")
-
-	#logofile 		= 'popout3d'
-	#logofile = 'com.github.PopoutApps.popout3d' #FROM AppImage file
- 	
-	#elif environment == 'snap': #FROM RPM FILE
-	#	homefold 		= os.getenv('SNAP_REAL_HOME')
-	#	workfold		= os.getenv('XDG_RUNTIME_DIR')
-	#	configfold 	= os.getenv('XDG_CONFIG_HOME')
-	#	#programfold = '/snap/popout3d/current/usr/share'
-	#	programfold = 'SNAP/usr/share/popout3d'
-	#	#localefold 	= '/snap/popout3d/current/usr/share/locale'	#localefold 	= 'SNAP/usr/share/popout3d/locale'
-	#	locale_folder = os.path.join(os.environ["SNAP"], "usr", "share", "locale")
-
-	#	logofile 		= 'popout3d'
 
 else:
   sys.exit('Cannot work out environment: ', environment)
@@ -206,6 +187,7 @@ programfold = programfold + '/'
 localefold = localefold + '/'
 
 if test:
+	x = os.path.expanduser("~/.config/"); print('>>>',x,'<<<')	
 	print('------------------------------------------------------')
 	print('Environment:\t', environment)
 	print('HOME\t\t', os.getenv('HOME'), os.getenv('SNAP_REAL_HOME'))
@@ -221,18 +203,6 @@ if test:
 	print('------------------------------------------------------')
 	#TEST = os.getenv('SNAP_USER_COMMON'); print('<<<<<',TEST,'>>>>>')
 	x = os.path.expanduser("~/.config/"); print(x)
-
-'''
-CONTROL FILES, WILL THEY BE HERE NEXT RUN? - NOT SURE THEY SHOULD BE HERE?	These arent permanent but need to be kept between sessions (1 does anyway)
-Correct places?
-	if os.path.isdir(workfold):											#if it exists, remove workdir and its files
-		shutil.rmtree(workfold, True)
-
-	result = os.system('mkdir ' + workfold)					#try making work directory
-	if result !=0:
-		sys.exit('Cannot make work directory')			#cannot make work directory so exit			
-
-'''
 
 #locale-------------------------------------------------------------------------
 locale.setlocale(locale.LC_ALL, '')
@@ -2035,101 +2005,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-'''TESTED AND WORKING ON RPM
-#44
-def main():
-    app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
-    app.connect('activate', on_activate)
-    app.run(None)
-
-if __name__ == "__main__":
-    main()
-'''
-#app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
-#app.connect('activate', on_activate)
-#app.run(None)
-'''#DIFF
-	def makeviewlist(queuing):
-		global viewlist, viewind, pairlist
-		#local variables newfile, newext, infolist, tag, ok
-		tag = 'TAG'
-		viewlist = []
-
-		if queuing:
-			# add all relevant images to viewlist
-			for record in pairlist:
-				#viewlist.append([record[0]+record[1], record[5], '2D', record[6]])		
-				viewlist.append([record[0]+record[1]+record[2]+record[3]+record[4], record[5], '3D', ''])	
-				#viewlist.append([record[0]+record[2], record[5], '2D', record[7]])		
-		else:
-			# 2D
-			for newfile in os.listdir(myfold):			 
-				newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]		
-				if len(newfile) > 1:
-					if newext in okext and newfile[-1] in okchar:
-						# set: only add files in set to viewlist
-
-						# file
-						if scope == 'File':
-							if len(newfile) == len(myfile) +1:
-								if newfile[0:-1] == myfile and newext == myext:
-									tag = exif(newfile, newext)
-									viewlist.append([newfile, newext, '2D', tag])
-
-						# folder
-						elif scope == 'Folder':
-							tag = exif(newfile, newext)
-							viewlist.append([newfile, newext, '2D', tag])
-
-			# 3D
-			for newfile in os.listdir(myfold):
-				newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
-				ok = False
-				if len(newfile) > 4: # old style LRAP
-					if (newext in okext
-					and newfile[-4] in okchar and newfile[-3] in okchar 
-					and newfile[-2] in okformat and newfile[-1] in okstyle
-					and newfile[-2] in viewType and newfile[-1] in viewType):
-
-						# file
-						if scope == 'File':
-							if len(newfile) == len(myfile) +4:												 
-								if newfile[0:-4] == myfile and newext == myext:
-									tag = exif(newfile, newext)
-									viewlist.append([newfile, newext, '3D', tag])
-									ok = True
-
-						# folder
-						elif scope == 'Folder':
-							tag = exif(newfile, newext)						
-							viewlist.append([newfile, newext, '3D', tag])
-							ok = True
-
-				if not ok and len(newfile) > 3: #44 new style LRA
-					if (newext in okext
-					and newfile[-3] in okchar and newfile[-2] in okchar
-					and newfile[-1] in okformat and 'N' in okstyle
-					and newfile[-1] in viewType):	
-						print(3)
-						# file
-						if scope == 'File':
-							if len(newfile) == len(myfile) +3:
-								if newfile[0:-3] == myfile and newext == myext:
-									tag = exif(newfile, newext)
-									viewlist.append([newfile, newext, '3D', tag])
-
-						# folder
-						elif scope == 'Folder':
-							tag = exif(newfile, newext)						
-							viewlist.append([newfile, newext, '3D', tag])						
-
-			viewlist = sorted(viewlist)
-
-		# make infolist
-		infolist = ''
-		for i in viewlist:
-			if (i[2] == '2D' and not process == 'reset') or i[2] == '3D':
-				infolist = infolist+i[0]+'.'+i[1]+'\n'
-		labelInfo.set_text(infolist)
-'''		

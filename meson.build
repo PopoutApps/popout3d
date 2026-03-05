@@ -1,5 +1,5 @@
 project('popout3d',
-  version: '1.6.46',
+  version: '1.6.47',
   meson_version: '>= 1.8.5'
 )
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -10,7 +10,7 @@ pkgdatadir = join_paths(datadir, 'popout3d')
 # -----------------------------
 # Python executable
 # -----------------------------
-install_data('popout3d.py', rename: 'popout3d', install_dir: bindir)
+install_data('popout3d.py', rename: 'popout3d', install_dir: bindir, install_mode: 'rwxr-xr-x')
 
 # -----------------------------
 # Data files
