@@ -54,17 +54,19 @@ except ImportError:
 #except ImportError:
 #	sys.exit('Failed to import cv2')
 
+#48 Changed order to avoid Gtk warning
 try:
 	import gi
 except ImportError:
 	sys.exit('Failed to import gi')
 
-from gi.repository import Gtk, GdkPixbuf, Gio
-
 try:
 	gi.require_version('Gtk', '4.0')
 except ImportError:
 	sys.exit(f'gi wrong version: {gi.__version__}') #44
+#
+from gi.repository import Gtk, GdkPixbuf, Gio
+
 
 try:
 	import locale
@@ -78,7 +80,7 @@ except ImportError:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.46'							# formatted for "About"
+version = '1.6.48'							# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -133,22 +135,19 @@ stop_event = threading.Event()	# for align_image_stack process
 
 #44 environment added and all revised ---------------------------------------
 if 'SNAP' in os.environ:
-	environment = 'snap'
+	environment = 'Snap'
 elif os.environ.get("container") == "flatpak":
-	environment = 'flatpak'
+	environment = 'Flatpak'
 elif os.environ.get("_") == "/usr/bin/popout3d":
-	environment = 'rpm'
+	environment = 'RPM'
 else:
-	environment = 'terminal'
-
-if test:
-	print ('<',environment,'>')
+	environment = 'Terminal'
 
 # Most environment variables aren't any good
 #	gettext will add {language}/LC_MESSAGES to locale
 
 # (RPM and AppImage set logofile, Snap didn't) out-of-date
-if environment == 'terminal':
+if environment == 'Terminal':
 	homefold		= os.getenv('HOME')
 	workfold		= os.getenv('XDG_RUNTIME_DIR')
 	configfold	= homefold  + '/git/testdirs/home/.config'
@@ -157,14 +156,14 @@ if environment == 'terminal':
 	localefold	= homefold  + '/git/testdirs/usr/share/locale'	
 	#logofile = 'popout3d'
 	
-elif environment == 'rpm':
+elif environment == 'RPM':
 	homefold 		= os.getenv('HOME')
 	workfold		= os.getenv('XDG_RUNTIME_DIR')
 	configfold 	= homefold + '/.config/popout3d'  # as XDG_CONFIG_HOME is None
 	programfold = '/usr/share/popout3d'						# as XDG_DATA_HOME is None
 	localefold  = '/usr/share/locale'							# as XDG_DATA_HOME is None
 	
-elif environment == 'flatpak':
+elif environment == 'Flatpak':
 	homefold 		= os.getenv('HOME')
 	workfold		= os.getenv('XDG_RUNTIME_DIR')
 	configfold 	= os.getenv('XDG_CONFIG_HOME')
@@ -172,29 +171,13 @@ elif environment == 'flatpak':
 	localefold  = '/app/share/locale'
 	#logofile = 'popout3d' #AppImage
 	
-elif environment == 'snap': #FROM SNAPFILE
+elif environment == 'Snap': #FROM SNAPFILE
 	homefold 		= os.getenv('SNAP_REAL_HOME')
 	workfold		= os.getenv('XDG_RUNTIME_DIR')
 	configfold 	= os.getenv('XDG_CONFIG_HOME')
 	snap_path 	= os.getenv('SNAP', '/')  # Default to '/' when not running in Snap
 	programfold = os.path.join(snap_path, 'usr/share/popout3d') #OK
 	localefold 	= os.path.join(snap_path, 'usr/share/locale')		#OK
-	x = os.path.expanduser("~/.config/"); print('>>>',x,'<<<')	
-	#configfold = os.path.expanduser("~/.config/")
-
-	#logofile 		= 'popout3d'
-	#logofile = 'com.github.PopoutApps.popout3d' #FROM AppImage file
- 	
-	#elif environment == 'snap': #FROM RPM FILE
-	#	homefold 		= os.getenv('SNAP_REAL_HOME')
-	#	workfold		= os.getenv('XDG_RUNTIME_DIR')
-	#	configfold 	= os.getenv('XDG_CONFIG_HOME')
-	#	#programfold = '/snap/popout3d/current/usr/share'
-	#	programfold = 'SNAP/usr/share/popout3d'
-	#	#localefold 	= '/snap/popout3d/current/usr/share/locale'	#localefold 	= 'SNAP/usr/share/popout3d/locale'
-	#	locale_folder = os.path.join(os.environ["SNAP"], "usr", "share", "locale")
-
-	#	logofile 		= 'popout3d'
 
 else:
   sys.exit('Cannot work out environment: ', environment)
@@ -206,6 +189,7 @@ programfold = programfold + '/'
 localefold = localefold + '/'
 
 if test:
+	x = os.path.expanduser("~/.config/"); print('>>>',x,'<<<')	
 	print('------------------------------------------------------')
 	print('Environment:\t', environment)
 	print('HOME\t\t', os.getenv('HOME'), os.getenv('SNAP_REAL_HOME'))
@@ -222,21 +206,9 @@ if test:
 	#TEST = os.getenv('SNAP_USER_COMMON'); print('<<<<<',TEST,'>>>>>')
 	x = os.path.expanduser("~/.config/"); print(x)
 
-'''
-CONTROL FILES, WILL THEY BE HERE NEXT RUN? - NOT SURE THEY SHOULD BE HERE?	These arent permanent but need to be kept between sessions (1 does anyway)
-Correct places?
-	if os.path.isdir(workfold):											#if it exists, remove workdir and its files
-		shutil.rmtree(workfold, True)
-
-	result = os.system('mkdir ' + workfold)					#try making work directory
-	if result !=0:
-		sys.exit('Cannot make work directory')			#cannot make work directory so exit			
-
-'''
-
 #locale-------------------------------------------------------------------------
 locale.setlocale(locale.LC_ALL, '')
-language = locale.getlocale()[0] 
+language = locale.getlocale()[0] #; language ='nl' # for testing
 lang = gettext.translation('popout3d', localedir=localefold, languages=[language], fallback=True)
 _ = lang.gettext
 
@@ -298,8 +270,13 @@ scenery13AN.jpg was made from scenery1.jpg for the left image and scenery3.jpg f
 
 Images ending in L and R would give sceneryLRAN.jpg.
 
-Folder:
-To process all the image sets in a folder, use Open>Folder.'''))
+Folder
+To process all the image sets in a folder, use Open>Folder.
+
+External Disks
+If your photos are on an external disk, you need to give Popout3D permission to use it. Assuming you have mounted that disk at /mnt/Data/Pictures:
+Use Gnome-Software to Install Flatseal. 
+Run Flatseal > Popout3D > Filesystem > Other files > Click the folder symbol > Add /mnt/Data/Pictures'''))
 
 # Options for 3D Images --------------------------------------------------------
 helpPage.append(_('''The format of the 3D image may be:
@@ -658,7 +635,7 @@ def on_activate(app):
 		# Comes from the standard icon so no need for directory
 		message.set_logo_icon_name(logofile) # logofile MUST NOT HAVE .png on the end! from RPM. # MUST NOT HAVE directory name or .png on the end! from Snap
 		message.set_program_name('Popout3D')
-		message.set_version(version)
+		message.set_version(environment + ' ' + version)
 		message.set_comments(_('Create a 3D image from ordinary photographs'))
 		message.set_website_label('Popout3D ' + _('on') + ' GitHub')
 		message.set_website('https://github.com/PopoutApps/popout3d')
@@ -668,9 +645,9 @@ def on_activate(app):
 		message.add_credit_section(section_name=_('Image Alignment'), people=['Hugin']) 
 		
 		message.add_credit_section(section_name='Flatpak', people=['"chrisawi"', 'Alexander Mikhaylenko', 'Hubert Figuière', 'Bartłomiej Piotrowski','Nick Richards'])
-		if environment == 'snap': #44
+		if environment == 'Snap': #44
 			message.add_credit_section(section_name=_('Snap Package'), people=['ChatGPT'])
-		elif environment == 'rpm': #44
+		elif environment == 'RPM': #44
 			message.add_credit_section(section_name=_('RPM Package'), people=['ChatGPT'])
 		message.set_visible(True)
 
@@ -1953,10 +1930,8 @@ def on_activate(app):
 	readSettings()
 
 	if scope == 'Folder':
-		#win.set_title(version + '			Folder: ' + myfold)
 		win.set_title(myfold)
 	else:
-		#win.set_title(version + '			Set: ' + myfold + myfile + '*.' + myext)
 		win.set_title(myfold + myfile + '*.' + myext)
 
 	startup = True
@@ -2035,101 +2010,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-'''TESTED AND WORKING ON RPM
-#44
-def main():
-    app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
-    app.connect('activate', on_activate)
-    app.run(None)
-
-if __name__ == "__main__":
-    main()
-'''
-#app = Gtk.Application(application_id='com.github.PopoutApps.popout3d')
-#app.connect('activate', on_activate)
-#app.run(None)
-'''#DIFF
-	def makeviewlist(queuing):
-		global viewlist, viewind, pairlist
-		#local variables newfile, newext, infolist, tag, ok
-		tag = 'TAG'
-		viewlist = []
-
-		if queuing:
-			# add all relevant images to viewlist
-			for record in pairlist:
-				#viewlist.append([record[0]+record[1], record[5], '2D', record[6]])		
-				viewlist.append([record[0]+record[1]+record[2]+record[3]+record[4], record[5], '3D', ''])	
-				#viewlist.append([record[0]+record[2], record[5], '2D', record[7]])		
-		else:
-			# 2D
-			for newfile in os.listdir(myfold):			 
-				newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]		
-				if len(newfile) > 1:
-					if newext in okext and newfile[-1] in okchar:
-						# set: only add files in set to viewlist
-
-						# file
-						if scope == 'File':
-							if len(newfile) == len(myfile) +1:
-								if newfile[0:-1] == myfile and newext == myext:
-									tag = exif(newfile, newext)
-									viewlist.append([newfile, newext, '2D', tag])
-
-						# folder
-						elif scope == 'Folder':
-							tag = exif(newfile, newext)
-							viewlist.append([newfile, newext, '2D', tag])
-
-			# 3D
-			for newfile in os.listdir(myfold):
-				newfile, newext = os.path.splitext(newfile) ; newext = newext[1:]
-				ok = False
-				if len(newfile) > 4: # old style LRAP
-					if (newext in okext
-					and newfile[-4] in okchar and newfile[-3] in okchar 
-					and newfile[-2] in okformat and newfile[-1] in okstyle
-					and newfile[-2] in viewType and newfile[-1] in viewType):
-
-						# file
-						if scope == 'File':
-							if len(newfile) == len(myfile) +4:												 
-								if newfile[0:-4] == myfile and newext == myext:
-									tag = exif(newfile, newext)
-									viewlist.append([newfile, newext, '3D', tag])
-									ok = True
-
-						# folder
-						elif scope == 'Folder':
-							tag = exif(newfile, newext)						
-							viewlist.append([newfile, newext, '3D', tag])
-							ok = True
-
-				if not ok and len(newfile) > 3: #44 new style LRA
-					if (newext in okext
-					and newfile[-3] in okchar and newfile[-2] in okchar
-					and newfile[-1] in okformat and 'N' in okstyle
-					and newfile[-1] in viewType):	
-						print(3)
-						# file
-						if scope == 'File':
-							if len(newfile) == len(myfile) +3:
-								if newfile[0:-3] == myfile and newext == myext:
-									tag = exif(newfile, newext)
-									viewlist.append([newfile, newext, '3D', tag])
-
-						# folder
-						elif scope == 'Folder':
-							tag = exif(newfile, newext)						
-							viewlist.append([newfile, newext, '3D', tag])						
-
-			viewlist = sorted(viewlist)
-
-		# make infolist
-		infolist = ''
-		for i in viewlist:
-			if (i[2] == '2D' and not process == 'reset') or i[2] == '3D':
-				infolist = infolist+i[0]+'.'+i[1]+'\n'
-		labelInfo.set_text(infolist)
-'''		

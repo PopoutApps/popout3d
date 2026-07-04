@@ -10,14 +10,14 @@
   <content_rating type="oars-1.0" />
   
   <branding>
-  <color type="primary" scheme_preference="light">##00ffff</color>
-  <color type="primary" scheme_preference="dark">##ff0000</color>
+  <color type="primary" scheme_preference="light">#00ffff</color>
+  <color type="primary" scheme_preference="dark">#ff0000</color>
 	</branding>
   <translation type="gettext">popout3d</translation>
   
   
   <releases>
-    <release date="2026-02-21" version="1.6.45">
+    <release date="2026-07-01" version="1.6.48">
       <description>
         <p>
         	Change to using OpenCV for image processing.
@@ -32,7 +32,7 @@
     ~Choose the 3D image format from anaglyph, side-by-side and crossover. 
     </p>
   </description> 
-  <launchable type="desktop-id">popout3d.desktop</launchable>
+  <launchable type="desktop-id">com.github.PopoutApps.popout3d.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/PopoutApps/popout3d/main/screenshot.png</image>
@@ -40,4 +40,11 @@
   </screenshots>
   <url type="homepage">https://popout3d.proboards.com/</url>
   <url type="vcs-browser">https://github.com/PopoutApps/popout3d</url>
+  <keywords>
+    <keyword>3d photo editor</keyword>
+    <keyword>image to 3d converter</keyword>
+    <keyword>photo stereo viewer</keyword>
+    <keyword>3d image creation</keyword>
+    <keyword>camera 3d conversion</keyword>
+  </keywords>
   </component>  
