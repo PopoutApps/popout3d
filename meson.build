@@ -1,5 +1,5 @@
 project('popout3d',
-  version: '1.6.48',
+  version: '1.6.49',
   meson_version: '>= 1.8.5'
 )
 # SPDX-License-Identifier: GPL-3.0-or-later

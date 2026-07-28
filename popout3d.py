@@ -80,7 +80,7 @@ except ImportError:
 
 #-------------------------------------------------------------------------------
 # create global variables and set default values
-version = '1.6.48'							# formatted for "About"
+version = '1.6.49'							# formatted for "About"
 firstrun = True
 
 viewDim = 'All'									# which sort of images to show
@@ -187,6 +187,9 @@ workfold = workfold + '/'
 configfold = configfold +'/'	
 programfold = programfold + '/'
 localefold = localefold + '/'
+
+#49 for RPM Make sure .config exists.
+os.makedirs(configfold, exist_ok=True)
 
 if test:
 	x = os.path.expanduser("~/.config/"); print('>>>',x,'<<<')	
@@ -773,7 +776,7 @@ def on_activate(app):
 					fn.write('False\n') #43
 				fn.write(str(balance)+'\n') #43
 
-			print('<<< balance: ',balance,'>>>') #44
+			#print('<<< balance: ',balance,'>>>') #44
 
 	#-----------------------------------------------------------------------------		 
 	def exif(newfilename, newext):
